@@ -26,6 +26,15 @@ function toAppError(err: unknown): AppError {
     if (err.code === "P2025") return AppError.notFound();
   }
 
+  // Body larger than the parser limit (body-parser sets status 413 and type).
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    (err as { type?: string }).type === "entity.too.large"
+  ) {
+    return new AppError(ErrorCode.BAD_REQUEST, "The upload is too large", undefined, 413);
+  }
+
   // Malformed JSON body from express.json()
   if (err instanceof SyntaxError && "body" in err) {
     return AppError.badRequest("Malformed JSON body");

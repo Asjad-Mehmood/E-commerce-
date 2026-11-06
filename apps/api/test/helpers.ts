@@ -116,3 +116,51 @@ export async function createCoupon(data: Partial<Prisma.CouponCreateInput> = {})
 
 export const variantRow = (id: string) =>
   prisma.productVariant.findUniqueOrThrow({ where: { id } });
+
+/** Places a Cash on Delivery order as a guest. */
+export async function placeCodOrder(opts: { qty?: number; stock?: number; price?: number } = {}) {
+  const product = await createTestProduct({ stock: opts.stock ?? 5, price: opts.price ?? 300000 });
+  const variantId = product.variants[0]!.id;
+  const agent = await cartWith([[variantId, opts.qty ?? 1]]);
+  const body = checkoutBody();
+  const res = await agent.post("/api/v1/checkout").send(body);
+  if (res.status !== 201) throw new Error(`checkout failed: ${JSON.stringify(res.body)}`);
+  return {
+    number: res.body.data.orderNumber as string,
+    total: res.body.data.total as number,
+    email: body.email as string,
+    variantId,
+    productId: product.id,
+  };
+}
+
+/** Places a card order and pays it with a demo test card. */
+export async function placePaidCardOrder(opts: { qty?: number; stock?: number } = {}) {
+  const product = await createTestProduct({ stock: opts.stock ?? 5, price: 300000 });
+  const variantId = product.variants[0]!.id;
+  const agent = await cartWith([[variantId, opts.qty ?? 1]]);
+  const body = checkoutBody({ paymentMethod: "STRIPE" });
+  const res = await agent.post("/api/v1/checkout").send(body);
+  if (res.status !== 201) throw new Error(`checkout failed: ${JSON.stringify(res.body)}`);
+  const paid = await request(app).post("/api/v1/payments/demo/confirm").send({
+    clientSecret: res.body.data.payment.clientSecret,
+    cardNumber: "4242424242424242",
+    expiry: "12/30",
+    cvc: "123",
+  });
+  if (paid.body.data?.status !== "succeeded")
+    throw new Error(`payment failed: ${JSON.stringify(paid.body)}`);
+  return {
+    number: res.body.data.orderNumber as string,
+    total: res.body.data.total as number,
+    email: body.email as string,
+    variantId,
+    productId: product.id,
+  };
+}
+
+/** A tiny valid PNG (1×1 pixel). */
+export const PNG_1PX = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+  "base64",
+);

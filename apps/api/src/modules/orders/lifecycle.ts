@@ -187,7 +187,7 @@ export async function markPaymentFailed(paymentId: string, reason: string): Prom
 
 // ───────────── Cancellation ─────────────
 
-const CANCELLABLE: OrderStatus[] = ["PENDING_PAYMENT", "CONFIRMED", "PROCESSING"];
+export const CANCELLABLE: OrderStatus[] = ["PENDING_PAYMENT", "CONFIRMED", "PROCESSING"];
 
 /**
  * Cancels an order and returns its stock: reserved units for unpaid card
@@ -272,7 +272,7 @@ export async function expireUnpaidOrders(now = new Date()): Promise<number> {
 // ───────────── Fulfilment (admin) ─────────────
 
 /** Allowed fulfilment steps. Cancellation goes through cancelOrder. */
-const NEXT: Partial<Record<OrderStatus, OrderStatus[]>> = {
+export const NEXT: Partial<Record<OrderStatus, OrderStatus[]>> = {
   CONFIRMED: ["PROCESSING"],
   PAID: ["PROCESSING"],
   PROCESSING: ["SHIPPED"],

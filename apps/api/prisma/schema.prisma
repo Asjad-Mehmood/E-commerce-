@@ -96,6 +96,8 @@ model User {
   emailVerified DateTime?
   googleId      String?   @unique
   isBlocked     Boolean   @default(false)
+  /// Private staff notes about a customer (admin only).
+  adminNote     String?
   lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -406,7 +408,9 @@ model Order {
   payments Payment[]
   history  OrderStatusHistory[]
   returns  ReturnRequest[]
+  refunds  Refund[]
 
+  @@index([placedAt])
   @@index([userId, placedAt])
   @@index([status, placedAt])
   @@index([status, reservedUntil])
@@ -452,9 +456,30 @@ model Payment {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  refunds Refund[]
 
   @@index([orderId])
+}
+
+/// Money returned to a customer: through the card provider, or recorded by staff for Cash on Delivery.
+model Refund {
+  id          String   @id @default(cuid())
+  orderId     String
+  paymentId   String
+  amount      Int
+  reason      String
+  /// Provider refund id (Stripe re_..., demo re_demo_...); null for manual (cash) refunds.
+  providerRef String?
+  restocked   Boolean  @default(false)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([createdAt])
 }
 
 model OrderStatusHistory {

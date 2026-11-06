@@ -49,6 +49,11 @@ export class DemoProvider implements PaymentProvider {
 
   async cancelIntent() {}
 
+  /** Demo refunds always succeed (no money ever moved). */
+  async refund() {
+    return { id: `re_demo_${randomToken(12)}` };
+  }
+
   /** Returns the intent id if the client secret is genuine. */
   verifyClientSecret(clientSecret: string): string | null {
     const match = /^(pi_demo_[\w-]+)_secret_([\w-]+)$/.exec(clientSecret);

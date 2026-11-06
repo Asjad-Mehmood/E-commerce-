@@ -988,7 +988,20 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** end-to-end purchase works in Stripe test mode.
 
-### Phase 4: Admin Dashboard (Weeks 7–9)
+### Phase 4: Admin Dashboard (Weeks 7–9) ✅ complete
+
+> Done: staff sign-in with role-based menu and page access; dashboard (net sales, orders, average order value, new customers vs the previous period, daily sales chart with a table view, top products, low stock, recent orders, payment mix); orders (filters, search, CSV export, fulfilment with courier and tracking, cancel, full and partial refunds through Stripe/demo or recorded for COD, notes, invoice and packing slip PDFs); customers (lifetime value, orders, addresses, notes, block); messages inbox with email replies; products (bulk actions, editor, image manager with upload, size × colour generator, per-variant settings); inventory with reasoned adjustments and history; categories and collections; coupons; shipping zones; content (announcement bar, scheduled banners, pages, FAQ); reports (sales by day/week/month, products, categories, inventory value, CSV); staff (email invitations, roles, deactivate, remove); store settings; activity log; new-order alerts by polling every 30 seconds.
+>
+> Changes from the original plan:
+>
+> - Returns and review moderation move to Phase 5, together with the customer-side returns and reviews they depend on.
+> - Product descriptions are plain text with paragraphs (no rich-text editor yet).
+> - Coupons apply to the whole cart; "applies to products/categories" is not built. Shipping rates are flat per zone (no weight-based rates).
+> - The dashboard shows no conversion rate: that needs visit analytics (Phase 6).
+> - New orders are announced by polling rather than Server-Sent Events, and the daily email digest is not built yet (Phase 5, with the background job queue).
+> - Images upload straight to Cloudinary when it is configured. Without it, they are stored on the API server (development default).
+> - Reports value inventory at selling prices, because cost prices are not recorded.
+> - SEO defaults stay in the storefront config rather than store settings.
 
 - Admin auth and layout, role-based menu.
 - Products management with variant matrix generator and image manager.
@@ -1061,13 +1074,13 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [x] Coupons
 - [x] Shipping zones and quote
 - [x] Checkout with stock reservation (transaction)
-- [x] Stripe PaymentIntent and webhooks (+ demo mode); refunds in Phase 4
+- [x] Stripe PaymentIntent and webhooks (+ demo mode), refunds
 - [x] COD flow
 - [x] Orders and status history, invoice PDF
 - [ ] Reviews, wishlist
-- [ ] CMS (banners, pages, FAQ), contact, newsletter
+- [x] CMS (banners, pages, FAQ, announcement), contact inbox, newsletter sign-up
 - [ ] BullMQ workers: emails, reservation expiry, stock alerts, abandoned cart
-- [ ] Admin endpoints: dashboard, reports, customers, staff, settings, audit log
+- [x] Admin endpoints: dashboard, reports, customers, staff, settings, audit log
 - [x] OpenAPI docs
 - [x] API tests (Phase 1 scope; extended each phase)
 
@@ -1091,29 +1104,29 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [x] SEO (metadata, JSON-LD, sitemap, robots, real 404s)
 - [ ] Analytics events
 
-### Admin
+### Admin (Phase 4 ✅)
 
-- [ ] Admin login and protected layout
-- [ ] Dashboard KPIs and charts
-- [ ] Products list and form (variant matrix, images)
-- [ ] Categories and collections
-- [ ] Inventory and adjustments
-- [ ] Orders list/detail, status, tracking, refunds, PDFs, CSV export
-- [ ] Returns
-- [ ] Customers
-- [ ] Reviews moderation
-- [ ] Coupons
-- [ ] Shipping settings
-- [ ] CMS
-- [ ] Messages inbox
-- [ ] Reports
-- [ ] Staff and roles
-- [ ] Store settings
-- [ ] Audit log
+- [x] Admin login and protected layout
+- [x] Dashboard KPIs and charts
+- [x] Products list and form (variant matrix, images)
+- [x] Categories and collections
+- [x] Inventory and adjustments
+- [x] Orders list/detail, status, tracking, refunds, PDFs, CSV export
+- [ ] Returns (Phase 5)
+- [x] Customers
+- [ ] Reviews moderation (Phase 5)
+- [x] Coupons
+- [x] Shipping settings
+- [x] CMS
+- [x] Messages inbox
+- [x] Reports
+- [x] Staff and roles
+- [x] Store settings
+- [x] Audit log
 
 ### Launch
 
-- [ ] E2E tests (Playwright)
+- [x] E2E tests (Playwright): storefront, checkout and admin; extended each phase
 - [ ] Lighthouse and accessibility audit
 - [ ] Security review
 - [ ] Production deploy, domain, SSL

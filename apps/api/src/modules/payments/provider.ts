@@ -14,6 +14,13 @@ export interface PaymentProvider {
   getClientSecret(intentId: string): Promise<string>;
   /** Best-effort: stop an abandoned intent from being paid later. */
   cancelIntent(intentId: string): Promise<void>;
+  /** Refunds part or all of a captured payment. Throws if the provider refuses. */
+  refund(input: {
+    intentId: string;
+    amount: number;
+    idempotencyKey: string;
+    reason: string;
+  }): Promise<{ id: string }>;
 }
 
 /** A provider event, normalised. Applied at most once (by `id`). */

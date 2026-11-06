@@ -41,6 +41,18 @@ export class StripeProvider implements PaymentProvider {
     await this.stripe.paymentIntents.cancel(intentId).catch(() => undefined);
   }
 
+  async refund(input: Parameters<PaymentProvider["refund"]>[0]) {
+    const refund = await this.stripe.refunds.create(
+      {
+        payment_intent: input.intentId,
+        amount: input.amount,
+        metadata: { reason: input.reason.slice(0, 500) },
+      },
+      { idempotencyKey: input.idempotencyKey },
+    );
+    return { id: refund.id };
+  }
+
   /** Verifies the Stripe-Signature header and maps the event. Unrelated events return null. */
   parseWebhook(rawBody: Buffer, signature: string | undefined): PaymentEvent | null {
     if (!signature) throw AppError.badRequest("Missing Stripe-Signature header");

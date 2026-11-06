@@ -29,10 +29,24 @@ describe("admin navigation RBAC", () => {
     const manager = labels("MANAGER");
     expect(manager).toContain("Products");
     expect(manager).not.toContain("Staff");
-    expect(manager).not.toContain("Audit log");
+    expect(manager).not.toContain("Activity log");
   });
 
   it("shows customers nothing", () => {
     expect(navForRole("CUSTOMER")).toEqual([]);
+  });
+});
+
+describe("active nav item", () => {
+  it("prefers the most specific match", async () => {
+    const { activeItem, minRoleFor } = await import("./nav");
+    expect(activeItem("/settings/shipping")?.label).toBe("Shipping");
+    expect(activeItem("/settings")?.label).toBe("Store settings");
+    expect(activeItem("/orders/HD-10001")?.label).toBe("Orders");
+    expect(activeItem("/")?.label).toBe("Dashboard");
+    expect(activeItem("/ordersx")).toBeUndefined();
+    expect(minRoleFor("/staff")).toBe("SUPER_ADMIN");
+    expect(minRoleFor("/products/abc")).toBe("MANAGER");
+    expect(minRoleFor("/orders")).toBe("SUPPORT");
   });
 });

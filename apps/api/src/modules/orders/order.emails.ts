@@ -100,3 +100,20 @@ export function cancelledEmail(o: FullOrder, reason: string): Mail {
     ),
   };
 }
+
+export function refundEmail(o: FullOrder, amount: number, manual: boolean): Mail {
+  const url = orderLink(o.orderNumber, o.id);
+  const how = manual
+    ? "Our team will return the money to you directly."
+    : "It goes back to the card you paid with and usually shows within 5-10 working days.";
+  return {
+    to: o.email,
+    subject: `Refund for order ${o.orderNumber}`,
+    text: `We've refunded ${formatMoney(amount)} for order ${o.orderNumber}. ${how}\n${url}\n`,
+    html: emailLayout(
+      "Your refund is on its way",
+      `<p>We've refunded <strong>${formatMoney(amount)}</strong> for order <strong>${esc(o.orderNumber)}</strong>.</p><p style="color:#555">${how}</p>`,
+      { label: "View order", url },
+    ),
+  };
+}

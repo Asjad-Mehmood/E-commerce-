@@ -1,5 +1,5 @@
 import { env } from "../../config/env";
-import { emailLayout } from "../../lib/email-layout";
+import { emailLayout, esc } from "../../lib/email-layout";
 import type { Mail } from "../../lib/mailer";
 
 const STORE = "Hoodie Store";
@@ -30,6 +30,39 @@ export function passwordResetEmail(to: string, name: string, token: string): Mai
       "Reset your password",
       "We received a request to reset your password. This link is valid for 1 hour. If you did not ask for this, you can ignore this email.",
       { label: "Reset password", url },
+    ),
+  };
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  SUPPORT: "Support",
+  MANAGER: "Manager",
+  SUPER_ADMIN: "Super Admin",
+};
+
+/** Staff invitation. `token` is set when the person still needs to choose a password. */
+export function staffInviteEmail(
+  to: string,
+  name: string,
+  role: string,
+  invitedBy: string,
+  token: string | null,
+): Mail {
+  const role_ = ROLE_LABEL[role] ?? role;
+  const url = token
+    ? `${env.ADMIN_URL}/set-password?token=${encodeURIComponent(token)}`
+    : `${env.ADMIN_URL}/login`;
+  const action = token
+    ? "Choose a password to get started. This link is valid for 72 hours."
+    : "Sign in with your existing account to get started.";
+  return {
+    to,
+    subject: `You've been invited to the ${STORE} admin`,
+    text: `Hi ${name},\n\n${invitedBy} gave you ${role_} access to the ${STORE} admin panel. ${action}\n${url}\n`,
+    html: layout(
+      `You're invited, ${name}`,
+      `${esc(invitedBy)} gave you <strong>${role_}</strong> access to the ${STORE} admin panel. ${action}`,
+      { label: token ? "Set your password" : "Sign in", url },
     ),
   };
 }

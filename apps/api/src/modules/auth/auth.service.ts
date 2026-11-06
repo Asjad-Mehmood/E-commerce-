@@ -55,7 +55,11 @@ async function createSession(user: User, client: ClientInfo): Promise<Session> {
   return { user: toAuthUser(user), accessToken, refreshToken };
 }
 
-async function issueToken(userId: string, type: AuthTokenType): Promise<string> {
+export async function issueToken(
+  userId: string,
+  type: AuthTokenType,
+  ttlMs = TOKEN_TTL[type],
+): Promise<string> {
   // Only the newest token of each type is valid.
   await prisma.authToken.deleteMany({ where: { userId, type, usedAt: null } });
   const token = randomToken();
@@ -64,7 +68,7 @@ async function issueToken(userId: string, type: AuthTokenType): Promise<string> 
       userId,
       type,
       tokenHash: sha256(token),
-      expiresAt: new Date(Date.now() + TOKEN_TTL[type]),
+      expiresAt: new Date(Date.now() + ttlMs),
     },
   });
   return token;

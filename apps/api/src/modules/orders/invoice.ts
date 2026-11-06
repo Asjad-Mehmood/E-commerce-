@@ -1,11 +1,10 @@
 import { formatMoney, ORDER_STATUS_LABEL, type OrderAddressDTO } from "@hoodie/types";
 import PDFDocument from "pdfkit";
+import type { StoreInfo } from "../../lib/settings";
 import { shippingLabel, type FullOrder } from "./order.mapper";
 
-const STORE = { name: "Hoodie Store", email: "support@hoodie.local" };
-
 /** Renders an A4 invoice PDF for an order. */
-export function renderInvoice(order: FullOrder): Promise<Buffer> {
+export function renderInvoice(order: FullOrder, STORE: StoreInfo): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: "A4",
@@ -21,7 +20,12 @@ export function renderInvoice(order: FullOrder): Promise<Buffer> {
     const right = 545;
 
     doc.font("Helvetica-Bold").fontSize(20).text(STORE.name.toUpperCase(), 50, 50);
-    doc.font("Helvetica").fontSize(9).fillColor("#666").text(STORE.email);
+    doc
+      .font("Helvetica")
+      .fontSize(9)
+      .fillColor("#666")
+      .text([STORE.email, STORE.phone].filter(Boolean).join(" · "));
+    if (STORE.address) doc.text(STORE.address, { width: 280 });
     doc
       .fillColor("#111")
       .font("Helvetica-Bold")
