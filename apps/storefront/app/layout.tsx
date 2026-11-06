@@ -1,8 +1,12 @@
+import type { HomeContentDTO } from "@hoodie/types";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Footer } from "@/components/footer";
-import { AnnouncementBar, Header } from "@/components/header";
+import { CartDrawer } from "@/components/cart/cart-drawer";
+import { Footer } from "@/components/layout/footer";
+import { AnnouncementBar, Header } from "@/components/layout/header";
+import { Providers } from "@/components/providers";
 import { siteConfig } from "@/lib/config";
+import { getDataSafe } from "@/lib/server-api";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,26 +23,29 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
-export const viewport: Viewport = {
-  themeColor: "#111111",
-};
+export const viewport: Viewport = { themeColor: "#111111" };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const home = await getDataSafe<HomeContentDTO | null>("/cms/home", null, { revalidate: 300 });
+
   return (
     <html lang="en">
       <body className="flex min-h-dvh flex-col">
-        <a
-          href="#main"
-          className="focus:bg-ink sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:px-3 focus:py-2 focus:text-white"
-        >
-          Skip to content
-        </a>
-        <AnnouncementBar />
-        <Header />
-        <main id="main" className="flex-1">
-          {children}
-        </main>
-        <Footer />
+        <Providers>
+          <a
+            href="#main"
+            className="focus:bg-ink sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:px-3 focus:py-2 focus:text-white"
+          >
+            Skip to content
+          </a>
+          <AnnouncementBar text={home?.announcement ?? null} />
+          <Header />
+          <main id="main" className="flex-1">
+            {children}
+          </main>
+          <Footer />
+          <CartDrawer />
+        </Providers>
       </body>
     </html>
   );

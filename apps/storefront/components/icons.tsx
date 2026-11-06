@@ -33,6 +33,49 @@ export const BagIcon = (p: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const MenuIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} {...p}>
+    <path d="M4 7h16M4 12h16M4 17h16" />
+  </svg>
+);
+
+export const ChevronDownIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} width={16} height={16} {...p}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+export const MinusIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} width={16} height={16} {...p}>
+    <path d="M5 12h14" />
+  </svg>
+);
+
+export const PlusIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} width={16} height={16} {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
+export const TrashIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} width={18} height={18} {...p}>
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+  </svg>
+);
+
+export const RulerIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} width={18} height={18} {...p}>
+    <path d="M3 17 17 3l4 4L7 21z" />
+    <path d="m7 13 2 2M10 10l2 2M13 7l2 2" />
+  </svg>
+);
+
+export const FilterIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base} width={18} height={18} {...p}>
+    <path d="M4 6h16M7 12h10M10 18h4" />
+  </svg>
+);
+
 export const HeartIcon = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base} {...p}>
     <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />

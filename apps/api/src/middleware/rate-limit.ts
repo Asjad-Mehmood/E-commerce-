@@ -15,6 +15,8 @@ export const RATE_LIMITS = {
   register: { windowMs: 60 * MINUTE, limit: 10 },
   passwordReset: { windowMs: 15 * MINUTE, limit: 5 },
   emailVerification: { windowMs: 15 * MINUTE, limit: 10 },
+  /** Contact form, newsletter, stock alerts. */
+  forms: { windowMs: 15 * MINUTE, limit: 10 },
 } satisfies Record<string, Pick<Options, "windowMs" | "limit">>;
 
 export type LimiterName = keyof typeof RATE_LIMITS;

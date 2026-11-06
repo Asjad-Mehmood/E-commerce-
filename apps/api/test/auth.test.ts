@@ -258,3 +258,14 @@ describe("password reset", () => {
     expect(reuse.status).toBe(400);
   });
 });
+
+describe("GET /auth/session", () => {
+  it("returns null (200) for guests and the user when signed in", async () => {
+    const guest = await request(app).get("/api/v1/auth/session");
+    expect(guest.status).toBe(200);
+    expect(guest.body.data).toBeNull();
+
+    const { agent, user } = await signedInAgent();
+    expect((await agent.get("/api/v1/auth/session")).body.data.id).toBe(user.id);
+  });
+});

@@ -1,14 +1,19 @@
 import { Container } from "@hoodie/ui";
 import Link from "next/link";
 import { footerNav, siteConfig } from "@/lib/config";
+import { NewsletterForm } from "../home/newsletter-form";
 
 export function Footer() {
   return (
     <footer className="border-line bg-surface mt-24 border-t">
-      <Container className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
+      <Container className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="lg:col-span-2">
           <p className="text-lg font-black uppercase tracking-tight">{siteConfig.name}</p>
-          <p className="text-muted mt-3 max-w-xs text-sm">{siteConfig.description}</p>
+          <p className="text-muted mt-3 max-w-sm text-sm">{siteConfig.description}</p>
+          <div className="mt-6 max-w-sm">
+            <p className="text-sm font-semibold">Get new drops first</p>
+            <NewsletterForm />
+          </div>
         </div>
         {Object.entries(footerNav).map(([heading, links]) => (
           <div key={heading}>

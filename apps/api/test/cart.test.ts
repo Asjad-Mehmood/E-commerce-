@@ -209,6 +209,33 @@ describe("update and remove", () => {
 });
 
 describe("signed-in cart", () => {
+  it("answers 401 TOKEN_EXPIRED for an expired token instead of silently using a guest cart", async () => {
+    const { SignJWT } = await import("jose");
+    const user = await createUser();
+    const expired = await new SignJWT({ role: "CUSTOMER" })
+      .setProtectedHeader({ alg: "HS256" })
+      .setSubject(user.id)
+      .setIssuer("hoodie-api")
+      .setIssuedAt(Math.floor(Date.now() / 1000) - 3600)
+      .setExpirationTime(Math.floor(Date.now() / 1000) - 60)
+      .sign(new TextEncoder().encode(process.env.JWT_ACCESS_SECRET));
+
+    const res = await request(app).get("/api/v1/cart").set("Cookie", `access_token=${expired}`);
+    expect(res.status).toBe(401);
+    expect(res.body.error.details.reason).toBe("TOKEN_EXPIRED");
+  });
+
+  it("keeps the access cookie for the whole session so expiry is detectable", async () => {
+    const user = await createUser();
+    const res = await request(app)
+      .post("/api/v1/auth/login")
+      .send({ email: user.email, password: PASSWORD });
+    const access = (res.headers["set-cookie"] as unknown as string[]).find((c) =>
+      c.startsWith("access_token="),
+    )!;
+    expect(Number(access.match(/Max-Age=(\d+)/)![1])).toBeGreaterThan(24 * 60 * 60);
+  });
+
   it("is stored against the user and follows them to another device", async () => {
     const product = await createTestProduct();
     const { agent, user } = await signedInAgent();

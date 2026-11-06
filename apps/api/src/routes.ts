@@ -11,6 +11,7 @@ import {
   filtersRouter,
   productsRouter,
 } from "./modules/catalog/catalog.routes";
+import { cmsRouter, formsRouter } from "./modules/cms/cms.routes";
 import { healthRouter } from "./modules/health/health.routes";
 
 /**
@@ -28,6 +29,8 @@ apiRouter.use("/categories", categoriesRouter);
 apiRouter.use("/collections", collectionsRouter);
 apiRouter.use("/filters", filtersRouter);
 apiRouter.use("/cart", cartRouter);
+apiRouter.use("/cms", cmsRouter);
+apiRouter.use(formsRouter);
 
 apiRouter.use("/admin/products", adminProductsRouter);
 apiRouter.use("/admin/variants", adminVariantsRouter);

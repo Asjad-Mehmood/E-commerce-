@@ -4,7 +4,7 @@ A full-stack e-commerce store for hoodies: a customer **storefront**, an **admin
 
 See **[PLAN.md](./PLAN.md)** for the full project plan and roadmap.
 
-> **Status: Phase 1 (backend core) complete.** Auth, accounts, permissions, rate limiting, the catalog and cart APIs, admin catalog management and API docs are built and tested. Next up is Phase 2 (storefront pages).
+> **Status: Phase 2 (storefront) complete.** Customers can browse, filter, pick a size and colour, build a cart, create an account and manage addresses. Next up is Phase 3 (checkout, payments and orders).
 
 ---
 
@@ -89,6 +89,7 @@ Run from the repo root:
 | `pnpm lint`                         | ESLint everywhere                                                |
 | `pnpm typecheck`                    | TypeScript checks everywhere                                     |
 | `pnpm test`                         | Unit and integration tests (the API tests need Postgres running) |
+| `pnpm e2e`                          | Playwright end-to-end tests (build first)                        |
 | `pnpm format` / `pnpm format:check` | Prettier                                                         |
 | `pnpm db:migrate`                   | Create a new migration after editing `schema.prisma` (dev)       |
 | `pnpm db:deploy`                    | Apply pending migrations (CI / production)                       |
@@ -98,21 +99,51 @@ Run from the repo root:
 
 Run one app or package with a filter, e.g. `pnpm --filter @hoodie/api dev`.
 
+## Storefront
+
+| Page                                               | Route                                                                         |
+| -------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Home                                               | `/`                                                                           |
+| Shop / category / collection / search              | `/shop`, `/categories/[slug]`, `/collections/[slug]`, `/search?q=`            |
+| Product                                            | `/products/[slug]`                                                            |
+| Cart                                               | `/cart` (plus the slide-out cart drawer on every page)                        |
+| Sign in / register / password reset / verify email | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` |
+| Account                                            | `/account`, `/account/profile`, `/account/addresses`                          |
+| Content                                            | `/size-guide`, `/faq`, `/about`, `/contact`, `/policies/[slug]`               |
+
+How it is built:
+
+- **Catalogue pages render on the server** and call the API with a short cache (60 seconds for products, 5 minutes for menus and content). The build never needs a running API.
+- **Filters live in the URL** (`/shop?size=M&color=Navy&sort=price_asc`), so filtered pages can be shared and indexed. Controls update instantly while results load.
+- **The session and cart are client-side** (TanStack Query) and talk to the API with cookies. An expired session is refreshed automatically.
+- **Forms use the same Zod schemas as the API** (`@hoodie/validation`), and API field errors appear next to the right field.
+- **SEO:** per-page metadata, Product and FAQ JSON-LD, `sitemap.xml`, `robots.txt`, and real 404 status codes for missing products, categories and pages.
+
+### End-to-end tests
+
+```bash
+pnpm build      # both apps must be built
+pnpm e2e        # starts the API + storefront if they aren't running, then runs Playwright
+```
+
+There are 18 tests on desktop and mobile (Pixel 7). They cover browsing, filters, sorting, search, the size guide, the cart, sold-out and low-stock states, registering with a guest cart, addresses, signing out and in, and the mobile menu and filters. They run against the database in `apps/api/.env` and create uniquely named `@test.local` users.
+
 ## API
 
 Interactive docs are at **`/api/docs`**, and the raw OpenAPI 3.1 spec at `/api/docs/openapi.json`. The spec is generated from the route definitions, so it stays in sync with the code.
 
-| Area             | Endpoints                                                                                                                                                                                      |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth             | `POST /auth/register`, `/login`, `/refresh`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password` · `PATCH /auth/password` · `GET /auth/me`               |
-| Account          | `PATCH /me` · `GET/POST /me/addresses` · `PUT/DELETE /me/addresses/:id`                                                                                                                        |
-| Catalog          | `GET /products` (filters, search, sort, pages) · `/products/:slug` · `/products/:slug/related` · `/categories[/:slug]` · `/collections[/:slug]` · `/filters`                                   |
-| Cart             | `GET/DELETE /cart` · `POST /cart/items` · `PATCH/DELETE /cart/items/:id`                                                                                                                       |
-| Admin (Manager+) | `/admin/products` CRUD + `/bulk` + `/variants/generate` · `/admin/variants/:id` + `/adjust-stock` + `/stock-history` · `/admin/categories` · `/admin/collections` · `POST /admin/uploads/sign` |
+| Area             | Endpoints                                                                                                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth             | `POST /auth/register`, `/login`, `/refresh`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password` · `PATCH /auth/password` · `GET /auth/me`, `/auth/session` |
+| Account          | `PATCH /me` · `GET/POST /me/addresses` · `PUT/DELETE /me/addresses/:id`                                                                                                                           |
+| Catalog          | `GET /products` (filters, search, sort, pages) · `/products/:slug` · `/products/:slug/related` · `/categories[/:slug]` · `/collections[/:slug]` · `/filters`                                      |
+| Cart             | `GET/DELETE /cart` · `POST /cart/items` · `PATCH/DELETE /cart/items/:id`                                                                                                                          |
+| Content          | `GET /cms/home`, `/cms/pages/:slug`, `/cms/faq` · `POST /contact`, `/newsletter`, `/stock-alerts`                                                                                                 |
+| Admin (Manager+) | `/admin/products` CRUD + `/bulk` + `/variants/generate` · `/admin/variants/:id` + `/adjust-stock` + `/stock-history` · `/admin/categories` · `/admin/collections` · `POST /admin/uploads/sign`    |
 
 ### How auth works (for the frontends)
 
-- **Login** sets two httpOnly cookies: `access_token` (15 minutes) and `refresh_token` (30 days, sent only to `/api/v1/auth/*`). Send requests with `credentials: "include"`.
+- **Login** sets two httpOnly cookies: `access_token` (the token inside is valid for 15 minutes) and `refresh_token` (30 days, sent only to `/api/v1/auth/*`). Send requests with `credentials: "include"`. Use `GET /auth/session` to check who is signed in: it returns `null` for guests rather than an error.
 - When a request returns **401 with `details.reason = "TOKEN_EXPIRED"`**, call `POST /auth/refresh` once and retry. If refresh fails, the user must sign in again.
 - **Refresh tokens rotate** on every use. Replaying an old one signs out every session for that user, which limits the damage from a stolen token.
 - **Guest carts** live in a `cart_token` cookie and merge into the user's cart automatically on login or register.

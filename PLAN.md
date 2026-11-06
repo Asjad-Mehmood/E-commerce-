@@ -186,7 +186,8 @@ RBAC is enforced in API middleware (`requireRole('MANAGER')`) **and** reflected 
 | ------------------------------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `/`                                                    | Home                 | Hero banner, featured hoodies, new arrivals, best sellers, collections, testimonials, newsletter                       |
 | `/shop`                                                | All products         | Grid, filters, sort, pagination / infinite scroll                                                                      |
-| `/collections/[slug]`                                  | Collection           | e.g. Oversized, Zip-Up, Pullover, Graphic, Winter                                                                      |
+| `/categories/[slug]`                                   | Category             | e.g. Pullover, Zip-Up, Oversized, Graphic                                                                              |
+| `/collections/[slug]`                                  | Collection           | e.g. New Arrivals, Best Sellers, Winter Essentials                                                                     |
 | `/products/[slug]`                                     | Product detail       | Gallery, size and color picker, stock status, size guide, description, fabric and care info, reviews, related products |
 | `/search?q=`                                           | Search results       | Full-text search with filters                                                                                          |
 | `/cart`                                                | Cart                 | Line items, quantity update, coupon, subtotal, shipping estimate                                                       |
@@ -224,7 +225,7 @@ RBAC is enforced in API middleware (`requireRole('MANAGER')`) **and** reflected 
 
 ### 6.4 Cart Behavior
 
-- Guests: the cart lives in local storage (Zustand persist) and is mirrored to the server with a `cartToken` cookie.
+- Guests: the cart lives on the server, identified by an httpOnly `cart_token` cookie (no local storage needed).
 - On login, the guest cart **merges** into the user's server cart.
 - The server re-checks stock and price on every cart change and at checkout.
 - Slide-out mini cart drawer with an "Added to cart" confirmation.
@@ -946,7 +947,17 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** documented API (Swagger/OpenAPI at `/docs`).
 
-### Phase 2: Storefront MVP (Weeks 3–5)
+### Phase 2: Storefront MVP (Weeks 3–5) ✅ complete
+
+> Done: header with mega-menu, mobile menu, announcement bar and footer; home page (CMS hero, categories, new arrivals, best sellers); shop, category, collection and search pages with URL-based filters (size, colour, fit, price, in stock), sort and pagination; product page with colour-aware gallery, size/colour picker, low-stock and sold-out states, back-in-stock sign-up, size guide with size finder, JSON-LD; cart drawer and cart page; sign in, register, forgot/reset password, email verification; account overview, profile, password and address book; FAQ, size guide, policies, about and contact pages; sitemap and robots; 18 Playwright end-to-end tests (desktop + mobile) in CI.
+>
+> Changes from the original plan:
+>
+> - The guest cart lives on the server (cart cookie), not in local storage, so it survives devices and merges on login. Zustand only holds UI state (drawers).
+> - Categories live at `/categories/[slug]`; `/collections/[slug]` is for collections.
+> - Public content endpoints were added to the API: `GET /cms/home`, `/cms/pages/:slug`, `/cms/faq`, `POST /contact`, `/newsletter`, `/stock-alerts`, and `GET /auth/session` (returns null for guests instead of a 401).
+> - The access-token cookie now lasts as long as the session, so an expired token is reported (401 TOKEN_EXPIRED) and refreshed, instead of the shopper silently becoming a guest.
+> - Wishlist, order history and order tracking links stay hidden until those features exist (Phases 3 and 5). The checkout button shows "coming soon" until Phase 3.
 
 - Layout: header, footer, mega-menu, mobile nav.
 - Home page, shop/collection page with filters and sorting, product detail with variant picker and size guide.
@@ -1051,20 +1062,21 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 ### Storefront
 
-- [ ] Design system and shared components
-- [ ] Header / footer / mega-menu / mobile nav
-- [ ] Home page
-- [ ] Shop and collection pages with filters/sort/pagination
-- [ ] Product detail page (gallery, variant picker, size guide, reviews)
-- [ ] Search
-- [ ] Cart drawer and cart page
+- [x] Design system and shared components (Button, Input, Field, Dialog/Drawer, Badge, Card, Skeleton)
+- [x] Header / footer / mega-menu / mobile nav
+- [x] Home page
+- [x] Shop, category and collection pages with filters/sort/pagination
+- [x] Product detail page (gallery, variant picker, size guide); reviews in Phase 5
+- [x] Search
+- [x] Cart drawer and cart page
 - [ ] Checkout (multi-step) with Stripe and COD
 - [ ] Order success page
-- [ ] Auth pages
-- [ ] Account: dashboard, orders, order detail, addresses, wishlist, profile
+- [x] Auth pages (sign in, register, forgot/reset password, verify email)
+- [x] Account: overview, profile, password, addresses
+- [ ] Account: orders, order detail (Phase 3), wishlist (Phase 5)
 - [ ] Guest order tracking
-- [ ] Content pages (about, contact, FAQ, policies, size guide)
-- [ ] SEO (metadata, JSON-LD, sitemap)
+- [x] Content pages (about, contact, FAQ, policies, size guide)
+- [x] SEO (metadata, JSON-LD, sitemap, robots, real 404s)
 - [ ] Analytics events
 
 ### Admin

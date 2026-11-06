@@ -23,7 +23,8 @@
     "db:seed": "pnpm --filter @hoodie/api db:seed",
     "db:reset": "pnpm --filter @hoodie/api db:reset",
     "db:studio": "pnpm --filter @hoodie/api db:studio",
-    "prepare": "husky"
+    "prepare": "husky",
+    "e2e": "pnpm --filter @hoodie/storefront e2e"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

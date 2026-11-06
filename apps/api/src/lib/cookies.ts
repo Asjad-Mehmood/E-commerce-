@@ -22,10 +22,14 @@ function base(): CookieOptions {
 }
 
 export function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+  // The cookie outlives the 15-minute token on purpose: an expired token is still
+  // sent, so the API answers 401 TOKEN_EXPIRED and the client refreshes. If the
+  // cookie vanished instead, a signed-in shopper would silently be treated as a
+  // guest (e.g. shown an empty cart).
   res.cookie(COOKIE.access, accessToken, {
     ...base(),
     path: "/",
-    maxAge: env.ACCESS_TOKEN_TTL_MINUTES * 60 * 1000,
+    maxAge: env.REFRESH_TOKEN_TTL_DAYS * DAY,
   });
   res.cookie(COOKIE.refresh, refreshToken, {
     ...base(),

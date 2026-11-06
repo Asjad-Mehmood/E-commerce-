@@ -1,8 +1,10 @@
-import type { InputHTMLAttributes, LabelHTMLAttributes } from "react";
+import type { InputHTMLAttributes, LabelHTMLAttributes, Ref } from "react";
 import { cn } from "../lib/cn";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean;
+  /** React 19 passes `ref` as a regular prop (needed by react-hook-form's register()). */
+  ref?: Ref<HTMLInputElement>;
 }
 
 export function Input({ className, invalid, ...props }: InputProps) {

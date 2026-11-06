@@ -88,6 +88,15 @@ export const authRouter = defineRoutes("/auth", "Auth", [
   }),
   route({
     method: "get",
+    path: "/session",
+    summary: "Current session: the signed-in user, or null for guests",
+    description:
+      "Unlike /auth/me this returns 200 with `data: null` for guests, so browsers don't log errors on every page view. An expired token still returns 401 TOKEN_EXPIRED so the client can refresh.",
+    access: "optional",
+    handler: async ({ req }) => ok(req.user ? await auth.getUser(req.user.id) : null),
+  }),
+  route({
+    method: "get",
     path: "/me",
     summary: "Get the signed-in user",
     access: "user",

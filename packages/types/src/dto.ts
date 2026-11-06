@@ -16,6 +16,19 @@ export interface AuthUser {
   createdAt: string;
 }
 
+export interface AddressDTO {
+  id: string;
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string | null;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+}
+
 // ───────────── Catalog ─────────────
 
 export type StockStatus = "in_stock" | "low_stock" | "out_of_stock";
@@ -176,4 +189,35 @@ export interface AdminProductListItemDTO {
   totalStock: number;
   soldCount: number;
   updatedAt: string;
+}
+
+// ───────────── Content (CMS) ─────────────
+
+export interface BannerDTO {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  imageUrl: string;
+  link: string | null;
+  ctaLabel: string | null;
+}
+
+export interface HomeContentDTO {
+  announcement: string | null;
+  banners: BannerDTO[];
+}
+
+export interface PageDTO {
+  slug: string;
+  title: string;
+  content: string;
+  seoDescription: string | null;
+  updatedAt: string;
+}
+
+export interface FaqDTO {
+  id: string;
+  question: string;
+  answer: string;
+  category: string | null;
 }

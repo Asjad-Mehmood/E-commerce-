@@ -8,18 +8,26 @@
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@hoodie/types": "workspace:*",
     "@hoodie/ui": "workspace:*",
     "@hoodie/validation": "workspace:*",
+    "@hookform/resolvers": "^5.9.2",
+    "@tanstack/react-query": "^5.106.1",
     "next": "15.5.29",
     "react": "^19.1.10",
-    "react-dom": "^19.1.10"
+    "react-dom": "^19.1.10",
+    "react-hook-form": "^7.91.0",
+    "sonner": "^2.0.8",
+    "zod": "^4.6.7",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@hoodie/config": "workspace:*",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4.3.4",
     "@types/node": "^22.20.5",
     "@types/react": "^19.1.10",
