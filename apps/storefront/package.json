@@ -16,6 +16,8 @@
     "@hoodie/ui": "workspace:*",
     "@hoodie/validation": "workspace:*",
     "@hookform/resolvers": "^5.9.2",
+    "@stripe/react-stripe-js": "^3.11.0",
+    "@stripe/stripe-js": "^7.10.0",
     "@tanstack/react-query": "^5.106.1",
     "next": "15.5.29",
     "react": "^19.1.10",

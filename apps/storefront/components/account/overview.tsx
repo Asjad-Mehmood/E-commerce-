@@ -6,11 +6,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMe } from "@/hooks/use-auth";
 import { useAddresses } from "@/hooks/use-addresses";
+import { OrderList, useMyOrders } from "../orders/my-orders";
 import { api } from "@/lib/api";
 
 export function AccountOverview() {
   const { data: me } = useMe();
   const { data: addresses } = useAddresses();
+  const { data: orders } = useMyOrders(3);
   const [sending, setSending] = useState(false);
   if (!me) return null;
   const defaultAddress = addresses?.find((a) => a.isDefault);
@@ -78,11 +80,27 @@ export function AccountOverview() {
       </div>
 
       <Card>
-        <h2 className="font-semibold">Orders</h2>
-        <p className="text-muted mt-2 text-sm">You haven’t placed any orders yet.</p>
-        <Link href="/shop" className="mt-4 inline-block text-sm font-medium underline">
-          Start shopping
-        </Link>
+        <h2 className="font-semibold">Recent orders</h2>
+        {orders?.data.length ? (
+          <>
+            <div className="mt-2">
+              <OrderList orders={orders.data} />
+            </div>
+            <Link
+              href="/account/orders"
+              className="mt-4 inline-block text-sm font-medium underline"
+            >
+              All orders
+            </Link>
+          </>
+        ) : (
+          <>
+            <p className="text-muted mt-2 text-sm">You haven’t placed any orders yet.</p>
+            <Link href="/shop" className="mt-4 inline-block text-sm font-medium underline">
+              Start shopping
+            </Link>
+          </>
+        )}
       </Card>
     </div>
   );

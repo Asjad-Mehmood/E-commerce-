@@ -9,6 +9,7 @@ import { useLogout, useMe } from "@/hooks/use-auth";
 
 const NAV = [
   { href: "/account", label: "Overview" },
+  { href: "/account/orders", label: "Orders" },
   { href: "/account/profile", label: "Profile & password" },
   { href: "/account/addresses", label: "Addresses" },
 ];

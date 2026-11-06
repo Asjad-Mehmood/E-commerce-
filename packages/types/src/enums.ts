@@ -70,6 +70,20 @@ export const OrderStatus = {
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 export const ORDER_STATUSES = values(OrderStatus);
 
+/** Customer-facing order status labels. */
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  PENDING_PAYMENT: "Awaiting payment",
+  CONFIRMED: "Confirmed",
+  PAID: "Paid",
+  PROCESSING: "Being prepared",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+  RETURN_REQUESTED: "Return requested",
+  RETURNED: "Returned",
+  REFUNDED: "Refunded",
+};
+
 export const PaymentMethod = {
   STRIPE: "STRIPE",
   COD: "COD",

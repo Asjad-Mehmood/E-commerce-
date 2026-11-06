@@ -63,7 +63,7 @@ export function CartPageContent() {
           </section>
           <Card className="lg:sticky lg:top-24">
             <h2 className="mb-4 font-semibold">Order summary</h2>
-            <CartSummary cart={cart} />
+            <CartSummary cart={cart} showCoupon />
           </Card>
         </div>
       )}

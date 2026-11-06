@@ -42,3 +42,11 @@ export const useRemoveCartItem = () =>
   useCartMutation((id: string) =>
     api<ApiResponse<CartDTO>>(`/cart/items/${id}`, { method: "DELETE" }),
   );
+
+export const useApplyCoupon = () =>
+  useCartMutation((code: string) =>
+    api<ApiResponse<CartDTO>>("/cart/coupon", { method: "POST", body: { code } }),
+  );
+
+export const useRemoveCoupon = () =>
+  useCartMutation(() => api<ApiResponse<CartDTO>>("/cart/coupon", { method: "DELETE" }));

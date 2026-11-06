@@ -967,7 +967,18 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** customers can browse and build a cart.
 
-### Phase 3: Checkout, Payments & Orders (Weeks 5–7)
+### Phase 3: Checkout, Payments & Orders (Weeks 5–7) ✅ complete
+
+> Done: shipping zones and delivery options, coupons on the cart, live checkout quote, checkout for guests and signed-in customers (saved addresses), Cash on Delivery, card payments through a provider layer (real Stripe with webhooks, or a built-in demo mode using Stripe test cards), stock reservation with 15-minute expiry, double-submit protection, sequential order numbers (HD-10001…), order confirmation/shipped/delivered/cancelled emails, order page with timeline, customer cancellation, invoice PDF, account order history, guest order tracking, admin order status endpoint (processing → shipped → delivered).
+>
+> Changes from the original plan:
+>
+> - **Demo payment mode**: without Stripe keys, card payments use a built-in stand-in for Stripe test mode (only Stripe's public test card numbers, no money moves). Setting `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET` switches to real Stripe with no code changes. Demo mode is disabled in production unless explicitly allowed.
+> - Unpaid reservations are released by an in-process scheduled job (every minute) rather than BullMQ; every stock change is an atomic conditional update, so it is safe on multiple servers. Emails are sent inline for now. BullMQ arrives with the heavier jobs in Phase 5.
+> - Email templates live in the API (`src/lib/email-layout.ts`, `*.emails.ts`) instead of a separate React Email package.
+> - Guest order links use an HMAC token derived from the order id (no stored secret), so a retried checkout returns the same link.
+> - Percentage coupons round down to whole rupees.
+> - Paid card orders are cancelled through a refund, which comes with the admin orders screen in Phase 4.
 
 - Shipping zones and rates, coupons, checkout quote.
 - Checkout flow (guest and logged in), Stripe Payment Element, COD.
@@ -1047,12 +1058,12 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [x] Filters and search endpoints
 - [x] Upload signing (Cloudinary)
 - [x] Cart and merge
-- [ ] Coupons
-- [ ] Shipping zones and quote
-- [ ] Checkout with stock reservation (transaction)
-- [ ] Stripe PaymentIntent and webhooks, refunds
-- [ ] COD flow
-- [ ] Orders and status history, invoice PDF
+- [x] Coupons
+- [x] Shipping zones and quote
+- [x] Checkout with stock reservation (transaction)
+- [x] Stripe PaymentIntent and webhooks (+ demo mode); refunds in Phase 4
+- [x] COD flow
+- [x] Orders and status history, invoice PDF
 - [ ] Reviews, wishlist
 - [ ] CMS (banners, pages, FAQ), contact, newsletter
 - [ ] BullMQ workers: emails, reservation expiry, stock alerts, abandoned cart
@@ -1069,12 +1080,13 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [x] Product detail page (gallery, variant picker, size guide); reviews in Phase 5
 - [x] Search
 - [x] Cart drawer and cart page
-- [ ] Checkout (multi-step) with Stripe and COD
-- [ ] Order success page
+- [x] Checkout with Stripe (or demo cards) and COD
+- [x] Order success page
 - [x] Auth pages (sign in, register, forgot/reset password, verify email)
 - [x] Account: overview, profile, password, addresses
-- [ ] Account: orders, order detail (Phase 3), wishlist (Phase 5)
-- [ ] Guest order tracking
+- [x] Account: orders, order detail
+- [ ] Account: wishlist (Phase 5)
+- [x] Guest order tracking
 - [x] Content pages (about, contact, FAQ, policies, size guide)
 - [x] SEO (metadata, JSON-LD, sitemap, robots, real 404s)
 - [ ] Analytics events

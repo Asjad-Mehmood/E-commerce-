@@ -20,6 +20,7 @@ export const footerNav = {
     { label: "Size guide", href: "/size-guide" },
   ],
   Help: [
+    { label: "Track your order", href: "/track-order" },
     { label: "FAQ", href: "/faq" },
     { label: "Shipping", href: "/policies/shipping" },
     { label: "Returns & exchanges", href: "/policies/returns" },

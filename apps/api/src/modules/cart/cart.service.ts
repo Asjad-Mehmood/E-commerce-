@@ -1,10 +1,17 @@
-import { DEFAULT_CURRENCY, ErrorCode, type CartDTO, type CartItemDTO } from "@hoodie/types";
+import {
+  DEFAULT_CURRENCY,
+  ErrorCode,
+  type AppliedCouponDTO,
+  type CartDTO,
+  type CartItemDTO,
+} from "@hoodie/types";
 import { MAX_QTY_PER_ITEM } from "@hoodie/validation";
 import type { Prisma } from "@prisma/client";
 import { randomToken } from "../../lib/crypto";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
 import { available, effectivePrice, stockStatus } from "../catalog/catalog.mapper";
+import { checkCoupon, couponDiscount } from "../checkout/pricing";
 
 /** Who owns the cart: a signed-in user, or a guest identified by the cart cookie. */
 export interface CartOwner {
@@ -12,7 +19,8 @@ export interface CartOwner {
   guestToken?: string;
 }
 
-const cartInclude = {
+export const cartInclude = {
+  coupon: true,
   items: {
     orderBy: { createdAt: "asc" },
     include: {
@@ -38,18 +46,20 @@ const cartInclude = {
   },
 } satisfies Prisma.CartInclude;
 
-type CartWithItems = Prisma.CartGetPayload<{ include: typeof cartInclude }>;
+export type CartWithItems = Prisma.CartGetPayload<{ include: typeof cartInclude }>;
 
 const EMPTY_CART: CartDTO = {
   id: null,
   items: [],
   itemCount: 0,
   subtotal: 0,
+  coupon: null,
+  total: 0,
   currency: DEFAULT_CURRENCY,
   warnings: [],
 };
 
-function findCart(owner: CartOwner) {
+export function findCart(owner: CartOwner) {
   if (owner.userId)
     return prisma.cart.findUnique({ where: { userId: owner.userId }, include: cartInclude });
   if (owner.guestToken)
@@ -61,7 +71,43 @@ function findCart(owner: CartOwner) {
 const maxQuantity = (v: { stock: number; reserved: number }) =>
   Math.min(available(v), MAX_QTY_PER_ITEM);
 
-function toCartDTO(cart: CartWithItems | null): CartDTO {
+/** The applied coupon with its discount on `subtotal`, or why it no longer applies. */
+export function describeCoupon(
+  coupon: CartWithItems["coupon"],
+  subtotal: number,
+  usesByCustomer = 0,
+): AppliedCouponDTO | null {
+  if (!coupon) return null;
+  const check = checkCoupon(coupon, { subtotal, usesByCustomer });
+  return {
+    code: coupon.code,
+    description: coupon.description,
+    type: coupon.type,
+    discount: check.ok ? couponDiscount(coupon, subtotal) : 0,
+    isValid: check.ok,
+    message: check.ok ? null : check.reason,
+  };
+}
+
+/** Orders that used this coupon for a customer (cancelled orders do not count). */
+export async function couponUsesBy(
+  couponId: string,
+  customer: { userId?: string; email?: string },
+) {
+  if (!customer.userId && !customer.email) return 0;
+  return prisma.order.count({
+    where: {
+      couponId,
+      status: { not: "CANCELLED" },
+      OR: [
+        ...(customer.userId ? [{ userId: customer.userId }] : []),
+        ...(customer.email ? [{ email: customer.email }] : []),
+      ],
+    },
+  });
+}
+
+export function toCartDTO(cart: CartWithItems | null, usesByCustomer = 0): CartDTO {
   if (!cart) return EMPTY_CART;
 
   const warnings: string[] = [];
@@ -100,18 +146,54 @@ function toCartDTO(cart: CartWithItems | null): CartDTO {
     };
   });
 
+  const subtotal = items.filter((i) => i.isAvailable).reduce((n, i) => n + i.lineTotal, 0);
+  const coupon = describeCoupon(cart.coupon, subtotal, usesByCustomer);
   return {
     id: cart.id,
     items,
     itemCount: items.reduce((n, i) => n + i.quantity, 0),
-    subtotal: items.filter((i) => i.isAvailable).reduce((n, i) => n + i.lineTotal, 0),
+    subtotal,
+    coupon,
+    total: subtotal - (coupon?.isValid ? coupon.discount : 0),
     currency: DEFAULT_CURRENCY,
     warnings,
   };
 }
 
 export async function getCart(owner: CartOwner): Promise<CartDTO> {
-  return toCartDTO(await findCart(owner));
+  const cart = await findCart(owner);
+  const uses =
+    cart?.coupon && owner.userId ? await couponUsesBy(cart.coupon.id, { userId: owner.userId }) : 0;
+  return toCartDTO(cart, uses);
+}
+
+/** Applies a coupon code to the cart (replacing any previous one). */
+export async function applyCoupon(owner: CartOwner, code: string): Promise<CartDTO> {
+  const cart = await findCart(owner);
+  if (!cart || cart.items.length === 0)
+    throw AppError.badRequest("Add something to your cart first");
+  const coupon = await prisma.coupon.findUnique({ where: { code } });
+  if (!coupon)
+    throw new AppError(ErrorCode.VALIDATION_ERROR, "This code is not valid", {
+      fieldErrors: { code: ["This code is not valid"] },
+    });
+
+  const subtotal = toCartDTO(cart).subtotal;
+  const uses = owner.userId ? await couponUsesBy(coupon.id, { userId: owner.userId }) : 0;
+  const check = checkCoupon(coupon, { subtotal, usesByCustomer: uses });
+  if (!check.ok)
+    throw new AppError(ErrorCode.VALIDATION_ERROR, check.reason, {
+      fieldErrors: { code: [check.reason] },
+    });
+
+  await prisma.cart.update({ where: { id: cart.id }, data: { couponId: coupon.id } });
+  return getCart(owner);
+}
+
+export async function removeCoupon(owner: CartOwner): Promise<CartDTO> {
+  const cart = await findCart(owner);
+  if (cart) await prisma.cart.update({ where: { id: cart.id }, data: { couponId: null } });
+  return getCart(owner);
 }
 
 async function getSellableVariant(variantId: string) {
@@ -240,6 +322,9 @@ export async function mergeGuestCart(guestToken: string, userId: string): Promis
       });
     }
 
+    if (guest.couponId && !userCart.couponId) {
+      await tx.cart.update({ where: { id: userCart.id }, data: { couponId: guest.couponId } });
+    }
     await tx.cart.delete({ where: { id: guest.id } });
   });
 }

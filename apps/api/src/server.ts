@@ -1,10 +1,12 @@
 import { createApp } from "./app";
+import { startJobs } from "./jobs";
 import { env } from "./config/env";
 import { logger } from "./lib/logger";
 import { prisma } from "./lib/prisma";
 import { redis } from "./lib/redis";
 
 const app = createApp();
+const stopJobs = startJobs();
 
 const server = app.listen(env.PORT, () => {
   logger.info(`🚀 API ready at http://localhost:${env.PORT}/api/v1 (${env.NODE_ENV})`);
@@ -13,6 +15,7 @@ const server = app.listen(env.PORT, () => {
 
 async function shutdown(signal: string) {
   logger.info(`${signal} received, shutting down…`);
+  stopJobs();
   server.close(async () => {
     await Promise.allSettled([prisma.$disconnect(), redis?.quit()]);
     process.exit(0);

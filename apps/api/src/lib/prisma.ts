@@ -7,7 +7,8 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: isProd ? ["error"] : ["warn", "error"],
+    // Query errors are reported by the error handler; logging them here too would duplicate them.
+    log: ["warn"],
   });
 
 if (!isProd) globalForPrisma.prisma = prisma;

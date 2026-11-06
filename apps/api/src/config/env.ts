@@ -46,6 +46,16 @@ const envSchema = z
     CLOUDINARY_API_KEY: z.string().optional(),
     CLOUDINARY_API_SECRET: z.string().optional(),
 
+    // Payments. With STRIPE_SECRET_KEY set, cards go through Stripe; otherwise a
+    // built-in demo provider (Stripe test cards, no real money) is used, which is
+    // disabled in production unless ALLOW_DEMO_PAYMENTS=true.
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    ALLOW_DEMO_PAYMENTS: z.enum(["true", "false"]).optional(),
+    /** Minutes an unpaid card order holds its stock. */
+    PAYMENT_RESERVATION_MINUTES: z.coerce.number().int().min(5).max(120).default(15),
+
     RATE_LIMIT_ENABLED: bool(true),
     API_DOCS_ENABLED: z.enum(["true", "false"]).optional(),
   })
@@ -58,8 +68,20 @@ const envSchema = z
       e.API_DOCS_ENABLED === undefined
         ? e.NODE_ENV !== "production"
         : e.API_DOCS_ENABLED === "true",
+    // Demo card payments default to on, except in production.
+    ALLOW_DEMO_PAYMENTS:
+      e.ALLOW_DEMO_PAYMENTS === undefined
+        ? e.NODE_ENV !== "production"
+        : e.ALLOW_DEMO_PAYMENTS === "true",
   }))
   .superRefine((e, ctx) => {
+    if (e.STRIPE_SECRET_KEY && !e.STRIPE_WEBHOOK_SECRET) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["STRIPE_WEBHOOK_SECRET"],
+        message: "Required with STRIPE_SECRET_KEY: payments are confirmed by Stripe webhooks",
+      });
+    }
     if (e.NODE_ENV === "production" && e.JWT_ACCESS_SECRET === DEV_JWT_SECRET) {
       ctx.addIssue({
         code: "custom",

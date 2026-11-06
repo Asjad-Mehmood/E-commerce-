@@ -1,11 +1,11 @@
-import { addCartItemSchema, updateCartItemSchema } from "@hoodie/validation";
+import { addCartItemSchema, applyCouponSchema, updateCartItemSchema } from "@hoodie/validation";
 import type { Request } from "express";
 import { COOKIE, setCartCookie } from "../../lib/cookies";
 import { ok } from "../../lib/http";
 import { defineRoutes, route } from "../../lib/route";
 import * as cart from "./cart.service";
 
-function owner(req: Request): cart.CartOwner {
+export function owner(req: Request): cart.CartOwner {
   if (req.user) return { userId: req.user.id };
   const token = (req.cookies as Record<string, string | undefined> | undefined)?.[COOKIE.cart];
   return { guestToken: token };
@@ -50,6 +50,23 @@ export const cartRouter = defineRoutes("/cart", "Cart", [
     summary: "Remove an item",
     access: "optional",
     handler: async ({ req, params }) => ok(await cart.removeItem(owner(req), params.id!)),
+  }),
+  route({
+    method: "post",
+    path: "/coupon",
+    summary: "Apply a discount code",
+    description:
+      "Returns 422 with the reason when the code does not apply (expired, minimum spend, already used…).",
+    access: "optional",
+    body: applyCouponSchema,
+    handler: async ({ req, body }) => ok(await cart.applyCoupon(owner(req), body.code)),
+  }),
+  route({
+    method: "delete",
+    path: "/coupon",
+    summary: "Remove the discount code",
+    access: "optional",
+    handler: async ({ req }) => ok(await cart.removeCoupon(owner(req))),
   }),
   route({
     method: "delete",

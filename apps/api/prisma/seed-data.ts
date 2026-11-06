@@ -388,7 +388,7 @@ export const settings: Record<string, unknown> = {
   "store.locale": "en-PK",
   "tax.rate": 0,
   "tax.inclusive": true,
-  "payments.stripe.enabled": false,
+  "payments.card.enabled": true,
   "payments.cod.enabled": true,
   "orders.numberPrefix": "HD-",
   "returns.windowDays": 14,

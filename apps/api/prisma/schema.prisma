@@ -391,6 +391,12 @@ model Order {
   adminNotes      String?
   /// Stock reservation deadline for unpaid online orders.
   reservedUntil   DateTime?
+  /// Client-supplied key so a double-submitted checkout creates one order.
+  idempotencyKey  String?       @unique
+  /// Cart the order was placed from (cleared once paid).
+  cartId          String?
+  paidAt          DateTime?
+  cancelledAt     DateTime?
   placedAt        DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -403,7 +409,9 @@ model Order {
 
   @@index([userId, placedAt])
   @@index([status, placedAt])
+  @@index([status, reservedUntil])
   @@index([email])
+  @@index([cartId])
 }
 
 model OrderItem {
@@ -481,6 +489,14 @@ model ReturnRequest {
   @@index([status, createdAt])
 }
 
+/// Payment provider events already applied (webhooks can be delivered more than once).
+model ProcessedPaymentEvent {
+  id        String   @id
+  provider  String
+  type      String
+  createdAt DateTime @default(now())
+}
+
 // ───────────────────────────── Reviews ─────────────────────────────
 
 model Review {
@@ -526,18 +542,18 @@ model ShippingZone {
 // ───────────────────────────── CMS & engagement ─────────────────────────────
 
 model Banner {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   title     String
   subtitle  String?
   imageUrl  String
   link      String?
   ctaLabel  String?
-  position  Int      @default(0)
-  isActive  Boolean  @default(true)
+  position  Int       @default(0)
+  isActive  Boolean   @default(true)
   startsAt  DateTime?
   endsAt    DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Page {

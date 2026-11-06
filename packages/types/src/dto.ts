@@ -2,7 +2,15 @@
  * Response shapes (DTOs) returned by the API and consumed by the frontends.
  * All money fields are integers in minor units.
  */
-import type { Fit, ProductStatus, Role } from "./enums";
+import type {
+  DiscountType,
+  Fit,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+  ProductStatus,
+  Role,
+} from "./enums";
 
 // ───────────── Auth ─────────────
 
@@ -150,11 +158,25 @@ export interface CartItemDTO {
   isAvailable: boolean;
 }
 
+export interface AppliedCouponDTO {
+  code: string;
+  description: string | null;
+  type: DiscountType;
+  /** Discount on the current subtotal (0 for free-shipping coupons). */
+  discount: number;
+  /** False when the cart no longer qualifies (e.g. below the minimum order). */
+  isValid: boolean;
+  message: string | null;
+}
+
 export interface CartDTO {
   id: string | null;
   items: CartItemDTO[];
   itemCount: number;
   subtotal: number;
+  coupon: AppliedCouponDTO | null;
+  /** subtotal minus a valid coupon's discount (before shipping). */
+  total: number;
   currency: string;
   /** Problems to fix before checkout, e.g. "Only 2 left of Classic Hoodie (M, Black)". */
   warnings: string[];
@@ -220,4 +242,145 @@ export interface FaqDTO {
   question: string;
   answer: string;
   category: string | null;
+}
+
+// ───────────── Checkout ─────────────
+
+export type ShippingMethodId = "standard" | "express";
+
+export interface ShippingOptionDTO {
+  id: ShippingMethodId;
+  label: string;
+  price: number;
+  estimatedDays: string;
+  isFree: boolean;
+}
+
+export interface PaymentOptionDTO {
+  method: Extract<PaymentMethod, "STRIPE" | "COD">;
+  label: string;
+  /** Extra fee for this method (Cash on Delivery). */
+  fee: number;
+  available: boolean;
+  /** True when card payments run in demo mode (no real money). */
+  demo?: boolean;
+}
+
+export interface QuoteDTO {
+  zone: string;
+  shippingOptions: ShippingOptionDTO[];
+  shippingMethod: ShippingMethodId;
+  paymentOptions: PaymentOptionDTO[];
+  paymentMethod: PaymentOptionDTO["method"];
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  codFee: number;
+  tax: number;
+  total: number;
+  currency: string;
+  coupon: AppliedCouponDTO | null;
+  /** Spend this much more for free standard shipping (null if not applicable). */
+  amountToFreeShipping: number | null;
+}
+
+export interface PaymentSessionDTO {
+  provider: "stripe" | "demo";
+  clientSecret: string;
+  /** Stripe publishable key (null in demo mode). */
+  publishableKey: string | null;
+  amount: number;
+  currency: string;
+}
+
+export interface CheckoutResultDTO {
+  orderNumber: string;
+  /** Secret for the order link: /orders/{number}?token=… */
+  accessToken: string;
+  status: OrderStatus;
+  total: number;
+  /** Present for card payments; null for Cash on Delivery. */
+  payment: PaymentSessionDTO | null;
+}
+
+// ───────────── Orders ─────────────
+
+export interface OrderItemDTO {
+  title: string;
+  slug: string;
+  size: string;
+  color: string;
+  sku: string;
+  imageUrl: string | null;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+}
+
+export interface OrderEventDTO {
+  status: OrderStatus;
+  note: string | null;
+  at: string;
+}
+
+export interface OrderAddressDTO {
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  state?: string | null;
+  postalCode: string;
+  country: string;
+}
+
+export interface OrderDTO {
+  number: string;
+  status: OrderStatus;
+  placedAt: string;
+  email: string;
+  phone: string;
+  shippingAddress: OrderAddressDTO;
+  items: OrderItemDTO[];
+  subtotal: number;
+  discountTotal: number;
+  shippingTotal: number;
+  codFee: number;
+  taxTotal: number;
+  grandTotal: number;
+  currency: string;
+  couponCode: string | null;
+  shippingMethod: string;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus | null;
+  trackingNumber: string | null;
+  courier: string | null;
+  customerNote: string | null;
+  timeline: OrderEventDTO[];
+  /** Unpaid card order: payment can still be completed until this time. */
+  payBy: string | null;
+  canCancel: boolean;
+  canPay: boolean;
+}
+
+export interface OrderListItemDTO {
+  number: string;
+  status: OrderStatus;
+  placedAt: string;
+  grandTotal: number;
+  itemCount: number;
+  imageUrl: string | null;
+}
+
+/** Limited view for "track my order" (no address or contact details). */
+export interface OrderTrackingDTO {
+  number: string;
+  status: OrderStatus;
+  placedAt: string;
+  shippingMethod: string;
+  city: string;
+  trackingNumber: string | null;
+  courier: string | null;
+  items: Pick<OrderItemDTO, "title" | "size" | "color" | "quantity">[];
+  timeline: OrderEventDTO[];
 }

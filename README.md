@@ -4,7 +4,7 @@ A full-stack e-commerce store for hoodies: a customer **storefront**, an **admin
 
 See **[PLAN.md](./PLAN.md)** for the full project plan and roadmap.
 
-> **Status: Phase 2 (storefront) complete.** Customers can browse, filter, pick a size and colour, build a cart, create an account and manage addresses. Next up is Phase 3 (checkout, payments and orders).
+> **Status: Phase 3 (checkout, payments and orders) complete.** Customers can buy with Cash on Delivery or card (demo mode until Stripe keys are added), get emails, track and cancel orders, and download invoices. Next up is Phase 4 (admin dashboard).
 
 ---
 
@@ -107,8 +107,9 @@ Run one app or package with a filter, e.g. `pnpm --filter @hoodie/api dev`.
 | Shop / category / collection / search              | `/shop`, `/categories/[slug]`, `/collections/[slug]`, `/search?q=`            |
 | Product                                            | `/products/[slug]`                                                            |
 | Cart                                               | `/cart` (plus the slide-out cart drawer on every page)                        |
+| Checkout / payment / order / tracking              | `/checkout`, `/checkout/pay`, `/orders/[number]`, `/track-order`              |
 | Sign in / register / password reset / verify email | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` |
-| Account                                            | `/account`, `/account/profile`, `/account/addresses`                          |
+| Account                                            | `/account`, `/account/orders`, `/account/profile`, `/account/addresses`       |
 | Content                                            | `/size-guide`, `/faq`, `/about`, `/contact`, `/policies/[slug]`               |
 
 How it is built:
@@ -126,20 +127,50 @@ pnpm build      # both apps must be built
 pnpm e2e        # starts the API + storefront if they aren't running, then runs Playwright
 ```
 
-There are 18 tests on desktop and mobile (Pixel 7). They cover browsing, filters, sorting, search, the size guide, the cart, sold-out and low-stock states, registering with a guest cart, addresses, signing out and in, and the mobile menu and filters. They run against the database in `apps/api/.env` and create uniquely named `@test.local` users.
+There are 21 tests on desktop and mobile (Pixel 7). They cover browsing, filters, sorting, search, the size guide, the cart, sold-out and low-stock states, registering with a guest cart, addresses, signing out and in, the mobile menu and filters, and checkout (Cash on Delivery, demo card payments with a decline then success, coupons, saved addresses, tracking and cancelling). They run against the database in `apps/api/.env` and create uniquely named `@test.local` users.
+
+## Checkout and payments
+
+1. **Cart → checkout.** The checkout page asks the API for a live quote (`POST /checkout/quote`) whenever the city, delivery method or payment method changes. Shipping comes from the shipping zone for the city, with free standard delivery over the zone's threshold.
+2. **Place the order** (`POST /checkout`). In one database transaction every line is **sold** (Cash on Delivery) or **reserved** (card) with an atomic conditional update, so if any line is short the whole order rolls back. Orders get sequential numbers (`HD-10001`…). Re-sending the same `idempotencyKey` returns the same order, so a double click can't create two.
+3. **Cash on Delivery** orders are confirmed immediately, and the customer gets a confirmation email.
+4. **Card** orders wait for payment for 15 minutes. Success turns the reservation into a sale and sends the confirmation email. A declined card can be retried. If the time runs out, a job releases the stock.
+5. **After the order:** the customer sees it at `/orders/HD-…?token=…` (the link in the email) or in their account. They can track it at `/track-order`, cancel it before it's prepared, and download a PDF invoice. Staff move orders along with `PATCH /admin/orders/:number/status` (processing → shipped → delivered), which emails the customer.
+
+### Demo payment mode (default)
+
+Without Stripe keys, card payments use a built-in **demo mode** that behaves like Stripe's test mode. No money moves, and only Stripe's public test cards are accepted:
+
+| Card                  | Result             |
+| --------------------- | ------------------ |
+| `4242 4242 4242 4242` | Succeeds           |
+| `4000 0000 0000 0002` | Declined           |
+| `4000 0000 0000 9995` | Insufficient funds |
+
+Use any future expiry date and any CVC. Demo mode is **off in production** unless `ALLOW_DEMO_PAYMENTS=true`, so a misconfigured live store offers Cash on Delivery only.
+
+### Switching to real Stripe
+
+1. Create a Stripe account and copy the test keys from the Stripe dashboard.
+2. In `apps/api/.env`, set `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET`.
+3. Point a webhook at `https://<your-api>/api/v1/payments/stripe/webhook` for `payment_intent.succeeded` and `payment_intent.payment_failed`. Locally: `stripe listen --forward-to localhost:4000/api/v1/payments/stripe/webhook`.
+4. Restart the API. The checkout then shows Stripe's Payment Element, and card details go straight to Stripe.
 
 ## API
 
 Interactive docs are at **`/api/docs`**, and the raw OpenAPI 3.1 spec at `/api/docs/openapi.json`. The spec is generated from the route definitions, so it stays in sync with the code.
 
-| Area             | Endpoints                                                                                                                                                                                         |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth             | `POST /auth/register`, `/login`, `/refresh`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password` · `PATCH /auth/password` · `GET /auth/me`, `/auth/session` |
-| Account          | `PATCH /me` · `GET/POST /me/addresses` · `PUT/DELETE /me/addresses/:id`                                                                                                                           |
-| Catalog          | `GET /products` (filters, search, sort, pages) · `/products/:slug` · `/products/:slug/related` · `/categories[/:slug]` · `/collections[/:slug]` · `/filters`                                      |
-| Cart             | `GET/DELETE /cart` · `POST /cart/items` · `PATCH/DELETE /cart/items/:id`                                                                                                                          |
-| Content          | `GET /cms/home`, `/cms/pages/:slug`, `/cms/faq` · `POST /contact`, `/newsletter`, `/stock-alerts`                                                                                                 |
-| Admin (Manager+) | `/admin/products` CRUD + `/bulk` + `/variants/generate` · `/admin/variants/:id` + `/adjust-stock` + `/stock-history` · `/admin/categories` · `/admin/collections` · `POST /admin/uploads/sign`    |
+| Area                    | Endpoints                                                                                                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth                    | `POST /auth/register`, `/login`, `/refresh`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password` · `PATCH /auth/password` · `GET /auth/me`, `/auth/session`           |
+| Account                 | `PATCH /me` · `GET/POST /me/addresses` · `PUT/DELETE /me/addresses/:id`                                                                                                                                     |
+| Catalog                 | `GET /products` (filters, search, sort, pages) · `/products/:slug` · `/products/:slug/related` · `/categories[/:slug]` · `/collections[/:slug]` · `/filters`                                                |
+| Cart                    | `GET/DELETE /cart` · `POST /cart/items` · `PATCH/DELETE /cart/items/:id`                                                                                                                                    |
+| Content                 | `GET /cms/home`, `/cms/pages/:slug`, `/cms/faq` · `POST /contact`, `/newsletter`, `/stock-alerts`                                                                                                           |
+| Checkout & orders       | `POST /cart/coupon` · `POST /checkout/quote`, `/checkout` · `GET /orders/track`, `/orders/:number`, `/orders/:number/payment`, `/orders/:number/invoice` · `POST /orders/:number/cancel` · `GET /me/orders` |
+| Payments                | `POST /payments/stripe/webhook` · `POST /payments/demo/confirm` (demo mode)                                                                                                                                 |
+| Admin (Manager+)        | `/admin/products` CRUD + `/bulk` + `/variants/generate` · `/admin/variants/:id` + `/adjust-stock` + `/stock-history` · `/admin/categories` · `/admin/collections` · `POST /admin/uploads/sign`              |
+| Admin orders (Support+) | `GET /admin/orders/:number` · `PATCH /admin/orders/:number/status`                                                                                                                                          |
 
 ### How auth works (for the frontends)
 

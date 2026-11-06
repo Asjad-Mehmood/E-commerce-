@@ -1,4 +1,5 @@
 import type { Role } from "@hoodie/types";
+import type { Prisma } from "@prisma/client";
 import { hash } from "argon2";
 import { randomUUID } from "node:crypto";
 import request from "supertest";
@@ -73,3 +74,45 @@ export async function createTestProduct(
     include: { variants: { orderBy: { size: "asc" } } },
   });
 }
+
+export const address = {
+  fullName: "Ali Khan",
+  phone: "03001234567",
+  line1: "House 12, Street 4, Gulberg III",
+  city: "Lahore",
+  postalCode: "54660",
+};
+
+/** A valid checkout body; every call gets a fresh idempotency key. */
+export const checkoutBody = (overrides: Record<string, unknown> = {}) => ({
+  email: uniqueEmail("buyer"),
+  phone: "03001234567",
+  shippingAddress: address,
+  shippingMethod: "standard",
+  paymentMethod: "COD",
+  idempotencyKey: randomUUID(),
+  ...overrides,
+});
+
+/** A guest agent with `items` ([variantId, qty]) in its cart. */
+export async function cartWith(items: [string, number][], agent = request.agent(app)) {
+  for (const [variantId, quantity] of items) {
+    const res = await agent.post("/api/v1/cart/items").send({ variantId, quantity });
+    if (res.status !== 200) throw new Error(`add to cart failed: ${JSON.stringify(res.body)}`);
+  }
+  return agent;
+}
+
+export async function createCoupon(data: Partial<Prisma.CouponCreateInput> = {}) {
+  return prisma.coupon.create({
+    data: {
+      code: `T${randomUUID().slice(0, 8).toUpperCase()}`,
+      type: "PERCENTAGE",
+      value: 10,
+      ...data,
+    },
+  });
+}
+
+export const variantRow = (id: string) =>
+  prisma.productVariant.findUniqueOrThrow({ where: { id } });
