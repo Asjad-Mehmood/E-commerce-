@@ -1,0 +1,31 @@
+{
+  "name": "@hoodie/storefront",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hoodie/types": "workspace:*",
+    "@hoodie/ui": "workspace:*",
+    "@hoodie/validation": "workspace:*",
+    "next": "15.5.29",
+    "react": "^19.1.10",
+    "react-dom": "^19.1.10"
+  },
+  "devDependencies": {
+    "@hoodie/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.4",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "eslint": "^9.39.5",
+    "tailwindcss": "^4.3.4",
+    "typescript": "^5.9.3"
+  }
+}

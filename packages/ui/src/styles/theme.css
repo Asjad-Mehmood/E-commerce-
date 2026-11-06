@@ -1,0 +1,31 @@
+/*
+ * Shared design tokens for the storefront and admin.
+ * Each app imports this AFTER `@import "tailwindcss";`.
+ * Swap these values once the brand palette is final.
+ */
+@theme {
+  /* System fonts for now; replace with the brand fonts (via next/font) once chosen. */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Brand */
+  --color-brand-50: oklch(0.97 0.01 60);
+  --color-brand-100: oklch(0.93 0.03 60);
+  --color-brand-500: oklch(0.65 0.17 45);
+  --color-brand-600: oklch(0.58 0.17 42);
+  --color-brand-700: oklch(0.5 0.15 40);
+
+  /* Neutrals / surfaces */
+  --color-ink: oklch(0.18 0.01 260);
+  --color-muted: oklch(0.5 0.01 260);
+  --color-line: oklch(0.91 0.005 260);
+  --color-surface: oklch(0.985 0.002 260);
+  --color-canvas: oklch(1 0 0);
+
+  /* Status */
+  --color-success: oklch(0.6 0.15 150);
+  --color-warning: oklch(0.75 0.15 80);
+  --color-danger: oklch(0.58 0.21 27);
+
+  --radius-card: 0.75rem;
+}

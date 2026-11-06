@@ -1,0 +1,40 @@
+{
+  "name": "hoodie-store",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "env:init": "node scripts/init-env.mjs",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @hoodie/api db:generate",
+    "db:migrate": "pnpm --filter @hoodie/api db:migrate",
+    "db:deploy": "pnpm --filter @hoodie/api db:deploy",
+    "db:seed": "pnpm --filter @hoodie/api db:seed",
+    "db:reset": "pnpm --filter @hoodie/api db:reset",
+    "db:studio": "pnpm --filter @hoodie/api db:studio",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.6.14",
+    "turbo": "^2.11.10"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs,json,md,css,yml,yaml}": "prettier --write --ignore-unknown"
+  }
+}

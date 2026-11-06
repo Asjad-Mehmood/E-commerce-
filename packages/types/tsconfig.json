@@ -1,0 +1,4 @@
+{
+  "extends": "@hoodie/config/tsconfig/base.json",
+  "include": ["src"]
+}
