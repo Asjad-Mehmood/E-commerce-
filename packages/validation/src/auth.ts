@@ -40,3 +40,13 @@ export const changePasswordSchema = z
     message: "New password must be different",
     path: ["newPassword"],
   });
+
+export const verifyEmailSchema = z.object({ token: z.string().min(1) });
+
+export const updateProfileSchema = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    phone: phoneSchema.nullable(),
+  })
+  .partial();
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

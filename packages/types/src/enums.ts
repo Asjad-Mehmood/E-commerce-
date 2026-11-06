@@ -19,6 +19,25 @@ export const ROLES = values(Role);
 
 /** Admin roles in ascending order of privilege. */
 export const ADMIN_ROLES = [Role.SUPPORT, Role.MANAGER, Role.SUPER_ADMIN] as const;
+export type AdminRole = (typeof ADMIN_ROLES)[number];
+
+/** Privilege rank of each role. Higher includes everything lower can do. */
+export const ROLE_RANK: Record<Role, number> = {
+  CUSTOMER: 0,
+  SUPPORT: 1,
+  MANAGER: 2,
+  SUPER_ADMIN: 3,
+};
+
+/** True if `role` is at least as privileged as `minRole`. */
+export function hasRole(role: Role, minRole: Role): boolean {
+  return ROLE_RANK[role] >= ROLE_RANK[minRole];
+}
+
+/** True for any staff role (Support, Manager, Super Admin). */
+export function isAdminRole(role: Role): role is AdminRole {
+  return hasRole(role, Role.SUPPORT);
+}
 
 export const ProductStatus = {
   DRAFT: "DRAFT",

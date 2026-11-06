@@ -25,6 +25,9 @@ export const ErrorCode = {
   NOT_FOUND: "NOT_FOUND",
   CONFLICT: "CONFLICT",
   OUT_OF_STOCK: "OUT_OF_STOCK",
+  ACCOUNT_BLOCKED: "ACCOUNT_BLOCKED",
+  INVALID_TOKEN: "INVALID_TOKEN",
+  SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
   RATE_LIMITED: "RATE_LIMITED",
   INTERNAL_ERROR: "INTERNAL_ERROR",
 } as const;
@@ -47,5 +50,7 @@ export interface HealthStatus {
   version: string;
   checks: {
     database: "up" | "down";
+    /** "disabled" when REDIS_URL is not configured (in-memory rate limiting is used). */
+    redis: "up" | "down" | "disabled";
   };
 }

@@ -6,17 +6,23 @@ import helmet from "helmet";
 import { randomUUID } from "node:crypto";
 import { pinoHttp } from "pino-http";
 import { env } from "./config/env";
+import { docsRouter } from "./docs/docs.routes";
 import { logger } from "./lib/logger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
+import { originCheck } from "./middleware/origin-check";
+import { createRateLimiters, type RateLimitOptions } from "./middleware/rate-limit";
 import { apiRouter } from "./routes";
 
 export interface CreateAppOptions {
   /** Extra routers to mount under /api/v1 (used by tests). */
   extend?: (router: express.Router) => void;
+  rateLimit?: RateLimitOptions;
 }
 
-export function createApp({ extend }: CreateAppOptions = {}): Express {
+export function createApp({ extend, rateLimit }: CreateAppOptions = {}): Express {
   const app = express();
+  const limiters = createRateLimiters(rateLimit);
+  app.locals.rateLimiters = limiters;
 
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
@@ -34,18 +40,17 @@ export function createApp({ extend }: CreateAppOptions = {}): Express {
     }),
   );
   app.use(helmet());
-  app.use(
-    cors({
-      origin: env.CORS_ORIGINS,
-      credentials: true,
-    }),
-  );
+  app.use(cors({ origin: env.CORS_ORIGINS, credentials: true }));
   app.use(compression());
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
+  if (env.API_DOCS_ENABLED) app.use("/api/docs", docsRouter());
+
   const v1 = express.Router();
+  v1.use(limiters.global);
+  v1.use(originCheck(env.CORS_ORIGINS));
   v1.use(apiRouter);
   extend?.(v1);
   app.use("/api/v1", v1);

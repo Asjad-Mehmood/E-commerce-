@@ -5,6 +5,11 @@ import {
   phoneSchema,
   productListQuerySchema,
   registerSchema,
+  stockAdjustmentSchema,
+  updateCategorySchema,
+  updateCollectionSchema,
+  updateProductSchema,
+  updateVariantSchema,
 } from "./index";
 
 const validProduct = {
@@ -106,5 +111,36 @@ describe("productListQuerySchema", () => {
 
   it("rejects unknown sizes", () => {
     expect(productListQuerySchema.safeParse({ size: "M,HUGE" }).success).toBe(false);
+  });
+});
+
+describe("updateProductSchema", () => {
+  it("does not accept variants (they have their own endpoints)", () => {
+    const r = updateProductSchema.parse({ title: "New title", variants: [{ sku: "X" }] });
+    expect(r).toEqual({ title: "New title" });
+  });
+
+  it("allows clearing the compare-at price with null", () => {
+    expect(updateProductSchema.parse({ compareAtPrice: null })).toEqual({ compareAtPrice: null });
+  });
+});
+
+describe("stockAdjustmentSchema", () => {
+  it("rejects a zero change", () => {
+    expect(stockAdjustmentSchema.safeParse({ change: 0, reason: "restock" }).success).toBe(false);
+  });
+  it("accepts negative changes for damage", () => {
+    expect(stockAdjustmentSchema.parse({ change: -2, reason: "damaged" }).change).toBe(-2);
+  });
+});
+
+describe("update schemas never inject defaults", () => {
+  it.each([
+    ["product", updateProductSchema, { title: "Renamed hoodie" }],
+    ["variant", updateVariantSchema, { colorHex: "#000000" }],
+    ["category", updateCategorySchema, { name: "Renamed" }],
+    ["collection", updateCollectionSchema, { name: "Renamed" }],
+  ] as const)("%s", (_name, schema, input) => {
+    expect(schema.parse(input)).toEqual(input);
   });
 });

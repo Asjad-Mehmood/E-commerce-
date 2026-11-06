@@ -1,21 +1,73 @@
 import { z } from "zod";
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  PORT: z.coerce.number().int().positive().default(4000),
-  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  REDIS_URL: z.string().optional(),
-  CORS_ORIGINS: z
-    .string()
-    .default("http://localhost:3000,http://localhost:3001")
-    .transform((v) =>
-      v
-        .split(",")
-        .map((o) => o.trim())
-        .filter(Boolean),
-    ),
-});
+const bool = (def: boolean) =>
+  z
+    .enum(["true", "false", "1", "0"])
+    .optional()
+    .transform((v) => (v === undefined ? def : v === "true" || v === "1"));
+
+const DEV_JWT_SECRET = "dev-only-insecure-secret-change-me-0123456789";
+
+const envSchema = z
+  .object({
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    PORT: z.coerce.number().int().positive().default(4000),
+    LOG_LEVEL: z
+      .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
+      .default("info"),
+    DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+    REDIS_URL: z.string().optional(),
+    CORS_ORIGINS: z
+      .string()
+      .default("http://localhost:3000,http://localhost:3001")
+      .transform((v) =>
+        v
+          .split(",")
+          .map((o) => o.trim())
+          .filter(Boolean),
+      ),
+
+    // Auth
+    JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
+    ACCESS_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(15),
+    REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
+    COOKIE_DOMAIN: z.string().optional(),
+    COOKIE_SECURE: bool(false),
+
+    // Links in emails
+    STOREFRONT_URL: z.url().default("http://localhost:3000"),
+
+    // Email (console in development, Resend when RESEND_API_KEY is set)
+    RESEND_API_KEY: z.string().optional(),
+    EMAIL_FROM: z.string().default("Hoodie Store <no-reply@hoodie.local>"),
+
+    // Uploads (signed direct-to-Cloudinary uploads)
+    CLOUDINARY_CLOUD_NAME: z.string().optional(),
+    CLOUDINARY_API_KEY: z.string().optional(),
+    CLOUDINARY_API_SECRET: z.string().optional(),
+
+    RATE_LIMIT_ENABLED: bool(true),
+    API_DOCS_ENABLED: z.enum(["true", "false"]).optional(),
+  })
+  .transform((e) => ({
+    ...e,
+    // Secure cookies are always on in production.
+    COOKIE_SECURE: e.NODE_ENV === "production" ? true : e.COOKIE_SECURE,
+    // API docs default to on, except in production.
+    API_DOCS_ENABLED:
+      e.API_DOCS_ENABLED === undefined
+        ? e.NODE_ENV !== "production"
+        : e.API_DOCS_ENABLED === "true",
+  }))
+  .superRefine((e, ctx) => {
+    if (e.NODE_ENV === "production" && e.JWT_ACCESS_SECRET === DEV_JWT_SECRET) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["JWT_ACCESS_SECRET"],
+        message: "Set a real secret in production (e.g. `openssl rand -base64 48`)",
+      });
+    }
+  });
 
 export type Env = z.infer<typeof envSchema>;
 

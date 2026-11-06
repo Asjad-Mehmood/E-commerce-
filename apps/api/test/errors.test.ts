@@ -2,21 +2,44 @@ import { registerSchema } from "@hoodie/validation";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
-import { validate } from "../src/middleware/validate";
+import { defineRoutes, route } from "../src/lib/route";
 import { AppError } from "../src/utils/app-error";
 
 const app = createApp({
   extend: (router) => {
-    router.post("/__test/register", validate({ body: registerSchema }), (req, res) => {
-      res.status(201).json({ data: req.body });
-    });
-    router.get("/__test/missing", () => {
-      throw AppError.notFound("Hoodie");
-    });
-    router.get("/__test/async-boom", async () => {
-      await Promise.resolve();
-      throw new Error("database exploded");
-    });
+    router.use(
+      "/__test",
+      defineRoutes("/__test", "Test", [
+        route({
+          method: "post",
+          path: "/register",
+          summary: "test",
+          access: "public",
+          body: registerSchema,
+          status: 201,
+          handler: ({ body }) => ({ data: body }),
+        }),
+        route({
+          method: "get",
+          path: "/missing",
+          summary: "test",
+          access: "public",
+          handler: () => {
+            throw AppError.notFound("Hoodie");
+          },
+        }),
+        route({
+          method: "get",
+          path: "/async-boom",
+          summary: "test",
+          access: "public",
+          handler: async () => {
+            await Promise.resolve();
+            throw new Error("database exploded");
+          },
+        }),
+      ]),
+    );
   },
 });
 

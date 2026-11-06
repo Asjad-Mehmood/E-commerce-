@@ -701,64 +701,65 @@ Base URL: `/api/v1`. All responses are JSON. Admin routes are prefixed with `/ad
 
 ### 10.3 Cart & Checkout
 
-| Method | Endpoint                               | Description                                      |
-| ------ | -------------------------------------- | ------------------------------------------------ |
-| GET    | `/cart`                                | Get cart (user or guest token)                   |
-| POST   | `/cart/items`                          | Add `{ variantId, quantity }`                    |
-| PATCH  | `/cart/items/:id`                      | Update quantity                                  |
-| DELETE | `/cart/items/:id`                      | Remove                                           |
-| POST   | `/cart/merge`                          | Merge guest cart after login                     |
-| POST   | `/cart/coupon` / DELETE `/cart/coupon` | Apply/remove coupon                              |
-| POST   | `/checkout/quote`                      | Totals for address + shipping method             |
-| POST   | `/checkout`                            | Create order. For Stripe, returns `clientSecret` |
-| POST   | `/payments/stripe/webhook`             | Stripe webhook (raw body, signature verified)    |
+| Method | Endpoint                               | Description                                               |
+| ------ | -------------------------------------- | --------------------------------------------------------- |
+| GET    | `/cart`                                | Get cart (user or guest token)                            |
+| POST   | `/cart/items`                          | Add `{ variantId, quantity }`                             |
+| PATCH  | `/cart/items/:id`                      | Update quantity                                           |
+| DELETE | `/cart/items/:id`                      | Remove                                                    |
+| DELETE | `/cart`                                | Empty the cart (guest cart merges automatically on login) |
+| POST   | `/cart/coupon` / DELETE `/cart/coupon` | Apply/remove coupon                                       |
+| POST   | `/checkout/quote`                      | Totals for address + shipping method                      |
+| POST   | `/checkout`                            | Create order. For Stripe, returns `clientSecret`          |
+| POST   | `/payments/stripe/webhook`             | Stripe webhook (raw body, signature verified)             |
 
 ### 10.4 Customer Account (auth required)
 
-| Method                | Endpoint                        | Description                      |
-| --------------------- | ------------------------------- | -------------------------------- |
-| PATCH                 | `/me`                           | Update profile                   |
-| PATCH                 | `/me/password`                  | Change password                  |
-| GET/POST/PATCH/DELETE | `/me/addresses[/:id]`           | Address book                     |
-| GET                   | `/me/orders` / `/me/orders/:id` | Order history                    |
-| POST                  | `/me/orders/:id/cancel`         | Cancel (if not yet shipped)      |
-| POST                  | `/me/orders/:id/return`         | Request return                   |
-| GET                   | `/me/orders/:id/invoice`        | PDF invoice                      |
-| GET/POST/DELETE       | `/me/wishlist[/:productId]`     | Wishlist                         |
-| POST                  | `/products/:id/reviews`         | Write review (verified purchase) |
-| GET                   | `/orders/track?number=&email=`  | Guest tracking (public)          |
+| Method                | Endpoint                        | Description                               |
+| --------------------- | ------------------------------- | ----------------------------------------- |
+| PATCH                 | `/me`                           | Update profile                            |
+| PATCH                 | `/auth/password`                | Change password (signs out other devices) |
+| GET/POST/PATCH/DELETE | `/me/addresses[/:id]`           | Address book                              |
+| GET                   | `/me/orders` / `/me/orders/:id` | Order history                             |
+| POST                  | `/me/orders/:id/cancel`         | Cancel (if not yet shipped)               |
+| POST                  | `/me/orders/:id/return`         | Request return                            |
+| GET                   | `/me/orders/:id/invoice`        | PDF invoice                               |
+| GET/POST/DELETE       | `/me/wishlist[/:productId]`     | Wishlist                                  |
+| POST                  | `/products/:id/reviews`         | Write review (verified purchase)          |
+| GET                   | `/orders/track?number=&email=`  | Guest tracking (public)                   |
 
 ### 10.5 Admin
 
-| Method           | Endpoint                                       | Description                          |
-| ---------------- | ---------------------------------------------- | ------------------------------------ |
-| GET              | `/admin/dashboard`                             | KPIs and charts data                 |
-| GET/POST         | `/admin/products`                              | List / create                        |
-| GET/PATCH/DELETE | `/admin/products/:id`                          | Read / update / archive              |
-| POST             | `/admin/products/:id/variants/generate`        | Generate size × color matrix         |
-| PATCH            | `/admin/variants/:id`                          | Update price/stock/SKU               |
-| POST             | `/admin/products/bulk`                         | Bulk publish/archive/delete          |
-| POST             | `/admin/uploads/sign`                          | Signed upload URL                    |
-| CRUD             | `/admin/categories`, `/admin/collections`      | Taxonomy                             |
-| GET              | `/admin/inventory`                             | Stock list, low-stock filter         |
-| POST             | `/admin/inventory/:variantId/adjust`           | Adjust with reason                   |
-| GET              | `/admin/orders`                                | List with filters                    |
-| GET/PATCH        | `/admin/orders/:id`                            | Detail, update status/tracking/notes |
-| POST             | `/admin/orders/:id/refund`                     | Full/partial refund                  |
-| GET              | `/admin/orders/:id/packing-slip`               | PDF                                  |
-| GET              | `/admin/orders/export`                         | CSV                                  |
-| GET/PATCH        | `/admin/returns[/:id]`                         | Return management                    |
-| GET              | `/admin/customers` / `/admin/customers/:id`    | Customer list/detail                 |
-| PATCH            | `/admin/customers/:id/block`                   | Block/unblock                        |
-| GET/PATCH/DELETE | `/admin/reviews[/:id]`                         | Moderation                           |
-| CRUD             | `/admin/coupons`                               | Discounts                            |
-| CRUD             | `/admin/shipping-zones`                        | Shipping                             |
-| CRUD             | `/admin/banners`, `/admin/pages`, `/admin/faq` | CMS                                  |
-| GET/PATCH        | `/admin/messages[/:id]`                        | Contact inbox                        |
-| GET              | `/admin/reports/sales?from=&to=&groupBy=`      | Reports                              |
-| CRUD             | `/admin/staff`                                 | Staff users and roles (Super Admin)  |
-| GET/PATCH        | `/admin/settings`                              | Store settings                       |
-| GET              | `/admin/audit-log`                             | Activity log                         |
+| Method            | Endpoint                                              | Description                                          |
+| ----------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| GET               | `/admin/dashboard`                                    | KPIs and charts data                                 |
+| GET/POST          | `/admin/products`                                     | List / create                                        |
+| GET/PATCH/DELETE  | `/admin/products/:id`                                 | Read / update / archive                              |
+| POST              | `/admin/products/:id/variants/generate`               | Generate size × color matrix                         |
+| POST/PATCH/DELETE | `/admin/products/:id/variants`, `/admin/variants/:id` | Add / update (price, SKU, active) / delete a variant |
+| POST/GET          | `/admin/variants/:id/adjust-stock`, `/stock-history`  | Adjust stock with a reason; history                  |
+| POST              | `/admin/products/bulk`                                | Bulk publish/archive/delete                          |
+| POST              | `/admin/uploads/sign`                                 | Signed upload URL                                    |
+| CRUD              | `/admin/categories`, `/admin/collections`             | Taxonomy                                             |
+| GET               | `/admin/inventory`                                    | Stock list, low-stock filter                         |
+| POST              | `/admin/inventory/:variantId/adjust`                  | Adjust with reason                                   |
+| GET               | `/admin/orders`                                       | List with filters                                    |
+| GET/PATCH         | `/admin/orders/:id`                                   | Detail, update status/tracking/notes                 |
+| POST              | `/admin/orders/:id/refund`                            | Full/partial refund                                  |
+| GET               | `/admin/orders/:id/packing-slip`                      | PDF                                                  |
+| GET               | `/admin/orders/export`                                | CSV                                                  |
+| GET/PATCH         | `/admin/returns[/:id]`                                | Return management                                    |
+| GET               | `/admin/customers` / `/admin/customers/:id`           | Customer list/detail                                 |
+| PATCH             | `/admin/customers/:id/block`                          | Block/unblock                                        |
+| GET/PATCH/DELETE  | `/admin/reviews[/:id]`                                | Moderation                                           |
+| CRUD              | `/admin/coupons`                                      | Discounts                                            |
+| CRUD              | `/admin/shipping-zones`                               | Shipping                                             |
+| CRUD              | `/admin/banners`, `/admin/pages`, `/admin/faq`        | CMS                                                  |
+| GET/PATCH         | `/admin/messages[/:id]`                               | Contact inbox                                        |
+| GET               | `/admin/reports/sales?from=&to=&groupBy=`             | Reports                                              |
+| CRUD              | `/admin/staff`                                        | Staff users and roles (Super Admin)                  |
+| GET/PATCH         | `/admin/settings`                                     | Store settings                                       |
+| GET               | `/admin/audit-log`                                    | Activity log                                         |
 
 ### 10.6 Standard Response Shapes
 
@@ -879,7 +880,6 @@ Target ≥ 80% coverage on backend services. CI blocks merges when tests fail.
 DATABASE_URL=
 REDIS_URL=
 JWT_ACCESS_SECRET=
-JWT_REFRESH_SECRET=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
@@ -925,7 +925,17 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** running empty apps, DB seeded, CI green.
 
-### Phase 1: Backend Core (Weeks 2–3)
+### Phase 1: Backend Core (Weeks 2–3) ✅ complete
+
+> Done: auth (register, login, refresh rotation with theft detection, logout, email verification, password reset/change), profile and address book, RBAC, Redis-backed rate limiting, CSRF origin check, public catalog with filters/search/sort, admin products/variants/stock/categories/collections with audit log, Cloudinary upload signing, guest + user cart with automatic merge on login, OpenAPI docs at `/api/docs`, 120 API tests on an isolated test database.
+>
+> Changes from the original plan:
+>
+> - Change password is `PATCH /auth/password` (not `/me/password`): the refresh cookie that identifies "this device" is only sent to `/auth` paths.
+> - The guest cart merges automatically on login/register, so there is no separate `/cart/merge` endpoint.
+> - Stock adjustments are `POST /admin/variants/:id/adjust-stock` (plus `GET …/stock-history`). Stock cannot be set directly, so every change is recorded.
+> - Refresh tokens are opaque random strings stored hashed, so `JWT_REFRESH_SECRET` is not needed.
+> - Google OAuth moves to Phase 5 (needs OAuth credentials). API docs live at `/api/docs`.
 
 - Auth (register/login/refresh/logout, email verification, reset password).
 - RBAC middleware, error handling, validation, logging, rate limiting.
@@ -1016,12 +1026,16 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 - [x] Prisma schema, migrations, seed
 - [x] Express app: helmet, cors, compression, pino, error handler
-- [ ] Auth module (JWT cookies, refresh rotation, email verify, reset, Google OAuth)
-- [ ] RBAC middleware
-- [ ] Products / variants / images / categories / collections
-- [ ] Filters and search endpoints
-- [ ] Upload signing (Cloudinary)
-- [ ] Cart and merge
+- [x] Auth module (JWT cookies, refresh rotation, email verify, reset)
+- [ ] Google OAuth (moved to Phase 5)
+- [x] RBAC middleware
+- [x] Rate limiting (Redis) and CSRF origin check
+- [x] Profile and address book
+- [x] Products / variants / images / categories / collections
+- [x] Stock adjustments with history
+- [x] Filters and search endpoints
+- [x] Upload signing (Cloudinary)
+- [x] Cart and merge
 - [ ] Coupons
 - [ ] Shipping zones and quote
 - [ ] Checkout with stock reservation (transaction)
@@ -1032,8 +1046,8 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [ ] CMS (banners, pages, FAQ), contact, newsletter
 - [ ] BullMQ workers: emails, reservation expiry, stock alerts, abandoned cart
 - [ ] Admin endpoints: dashboard, reports, customers, staff, settings, audit log
-- [ ] OpenAPI docs
-- [ ] API tests
+- [x] OpenAPI docs
+- [x] API tests (Phase 1 scope; extended each phase)
 
 ### Storefront
 

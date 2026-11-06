@@ -1,4 +1,4 @@
-import { Role } from "@hoodie/types";
+import { hasRole, Role } from "@hoodie/types";
 
 export interface NavItem {
   label: string;
@@ -62,11 +62,8 @@ export const adminNav: NavSection[] = [
   },
 ];
 
-const rank: Record<Role, number> = { CUSTOMER: 0, SUPPORT: 1, MANAGER: 2, SUPER_ADMIN: 3 };
-
-export function canAccess(userRole: Role, minRole: Role): boolean {
-  return rank[userRole] >= rank[minRole];
-}
+/** Same rule the API enforces (shared from @hoodie/types). */
+export const canAccess = hasRole;
 
 /** Sidebar sections filtered to what `role` may see (empty sections removed). */
 export function navForRole(role: Role): NavSection[] {

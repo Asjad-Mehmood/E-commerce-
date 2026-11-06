@@ -4,7 +4,7 @@ A full-stack e-commerce store for hoodies: a customer **storefront**, an **admin
 
 See **[PLAN.md](./PLAN.md)** for the full project plan and roadmap.
 
-> **Status: Phase 0 (foundation) complete.** The monorepo, database schema, seed data, shared packages, API skeleton, app shells, tooling and CI are in place. Next up is Phase 1 (auth, catalog and cart APIs).
+> **Status: Phase 1 (backend core) complete.** Auth, accounts, permissions, rate limiting, the catalog and cart APIs, admin catalog management and API docs are built and tested. Next up is Phase 2 (storefront pages).
 
 ---
 
@@ -52,11 +52,12 @@ pnpm db:seed          # load demo hoodies, admin user, shipping zones, pages...
 pnpm dev              # start the API, storefront and admin together
 ```
 
-| App        | URL                                                     |
-| ---------- | ------------------------------------------------------- |
-| Storefront | http://localhost:3000                                   |
-| Admin      | http://localhost:3001                                   |
-| API        | http://localhost:4000/api/v1 (health: `/api/v1/health`) |
+| App                | URL                                                     |
+| ------------------ | ------------------------------------------------------- |
+| Storefront         | http://localhost:3000                                   |
+| Admin              | http://localhost:3001                                   |
+| API                | http://localhost:4000/api/v1 (health: `/api/v1/health`) |
+| API docs (Swagger) | http://localhost:4000/api/docs                          |
 
 ### Demo accounts (development seed)
 
@@ -65,7 +66,7 @@ pnpm dev              # start the API, storefront and admin together
 | Super Admin | `admin@hoodie.local`    | value of `SEED_ADMIN_PASSWORD` in `apps/api/.env` (default `ChangeMe123`) |
 | Customer    | `customer@hoodie.local` | `Customer123`                                                             |
 
-Login arrives in Phase 1. The accounts are already in the database.
+Sign in with `POST /api/v1/auth/login`, or use **Authorize** in the API docs.
 
 ### What the seed loads
 
@@ -97,10 +98,39 @@ Run from the repo root:
 
 Run one app or package with a filter, e.g. `pnpm --filter @hoodie/api dev`.
 
+## API
+
+Interactive docs are at **`/api/docs`**, and the raw OpenAPI 3.1 spec at `/api/docs/openapi.json`. The spec is generated from the route definitions, so it stays in sync with the code.
+
+| Area             | Endpoints                                                                                                                                                                                      |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth             | `POST /auth/register`, `/login`, `/refresh`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password` · `PATCH /auth/password` · `GET /auth/me`               |
+| Account          | `PATCH /me` · `GET/POST /me/addresses` · `PUT/DELETE /me/addresses/:id`                                                                                                                        |
+| Catalog          | `GET /products` (filters, search, sort, pages) · `/products/:slug` · `/products/:slug/related` · `/categories[/:slug]` · `/collections[/:slug]` · `/filters`                                   |
+| Cart             | `GET/DELETE /cart` · `POST /cart/items` · `PATCH/DELETE /cart/items/:id`                                                                                                                       |
+| Admin (Manager+) | `/admin/products` CRUD + `/bulk` + `/variants/generate` · `/admin/variants/:id` + `/adjust-stock` + `/stock-history` · `/admin/categories` · `/admin/collections` · `POST /admin/uploads/sign` |
+
+### How auth works (for the frontends)
+
+- **Login** sets two httpOnly cookies: `access_token` (15 minutes) and `refresh_token` (30 days, sent only to `/api/v1/auth/*`). Send requests with `credentials: "include"`.
+- When a request returns **401 with `details.reason = "TOKEN_EXPIRED"`**, call `POST /auth/refresh` once and retry. If refresh fails, the user must sign in again.
+- **Refresh tokens rotate** on every use. Replaying an old one signs out every session for that user, which limits the damage from a stolen token.
+- **Guest carts** live in a `cart_token` cookie and merge into the user's cart automatically on login or register.
+- **Roles:** `CUSTOMER` < `SUPPORT` < `MANAGER` < `SUPER_ADMIN`. Changing a role or blocking a user takes effect on their next request.
+- **CSRF:** cookies are `SameSite=Lax`, and writes from browser origins outside `CORS_ORIGINS` are rejected.
+- **Rate limits** (per IP): login 5/min, register 10/hour, password reset 5 per 15 min, everything else 300/min. They are stored in Redis when `REDIS_URL` is set, so limits hold across multiple API servers.
+- **Emails** (verification, password reset) are printed to the API log in development. Set `RESEND_API_KEY` to send real ones.
+
+### Tests
+
+`pnpm test` runs the API tests against a **separate database**: `hoodie_store_test`, or `TEST_DATABASE_URL` if set. It is migrated and seeded automatically and never wiped. Each test creates uniquely named data, so the suite can be re-run at any time without touching development data.
+
 ## Conventions
 
 - **Money is always an integer in minor units** (paisa): `349900` = Rs 3,499. Use `formatMoney()` from `@hoodie/types` for display. Never use floats.
 - **Validation lives in `@hoodie/validation`.** The same Zod schema validates the frontend form and the API request.
+  - Zod 4 applies `.default()` values even inside `.partial()`. Define each resource's fields once without defaults, add defaults only in the create schema, and keep the update schema a plain `.partial()`. Otherwise a PATCH silently resets fields. A test enforces this.
+- **Routes are declared with `defineRoutes()`** (`apps/api/src/lib/route.ts`). Each route states its access level, body/query schema and rate limit. Validation, auth and the API docs all come from that one definition.
 - **Enums live in two places**: the Prisma schema and `@hoodie/types`. A test (`apps/api/test/enums.test.ts`) fails if they drift apart.
 - **API responses** use `{ data }` / `{ data, meta }` on success and `{ error: { code, message, details, requestId } }` on failure. Throw `AppError` from services; the error handler formats the response.
 - **Commits** follow [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`…), enforced by commitlint. Prettier runs on staged files before each commit.

@@ -14,7 +14,10 @@ describe("GET /api/v1/health", () => {
     const res = await request(app).get("/api/v1/health");
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({ status: "ok", checks: { database: "up" } });
+    expect(res.body.data).toMatchObject({
+      status: "ok",
+      checks: { database: "up", redis: "disabled" },
+    });
     expect(res.headers["x-request-id"]).toBeTruthy();
   });
 
