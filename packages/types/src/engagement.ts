@@ -145,4 +145,6 @@ export interface NewsletterSubscriberDTO {
 
 export interface AuthProvidersDTO {
   google: boolean;
+  /** Whether the store sends emails (verification, password reset, order updates). */
+  email: boolean;
 }

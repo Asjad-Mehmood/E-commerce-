@@ -1,7 +1,7 @@
 "use client";
 
 import { hasRole, isAdminRole } from "@hoodie/types";
-import { Button, Dialog, Skeleton } from "@hoodie/ui";
+import { Button, Dialog, Logo, Skeleton } from "@hoodie/ui";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -13,8 +13,8 @@ import { Topbar } from "./topbar";
 
 function Brand() {
   return (
-    <Link href="/" className="font-black uppercase tracking-tight">
-      Hoodie Admin
+    <Link href="/" aria-label="Urban Store Admin home">
+      <Logo label="Admin" markClassName="size-7" />
     </Link>
   );
 }

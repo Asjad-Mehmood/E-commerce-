@@ -36,7 +36,7 @@ test("moderates a review and handles a return through to the refund", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: "Approve" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Approve" }).click();
-  await expect(page.getByText("Approved. The customer was emailed")).toBeVisible();
+  await expect(page.getByText("Return approved.")).toBeVisible();
 
   await page.getByRole("button", { name: "Parcel received" }).click();
   const receive = page.getByRole("dialog");

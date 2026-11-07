@@ -1024,7 +1024,7 @@ Estimated for 1–2 developers. Adjust to your team size.
 > - Returns are refunds only; exchanges are handled by the customer noting the size they want and staff placing a new order.
 > - Cart reminders go to signed-in customers only, because guest carts have no email address until checkout.
 > - Newsletter campaigns are sent from an external email tool using the CSV export; the store only collects subscribers.
-> - Without Redis, the daily summary and review-request emails are skipped; everything else falls back to in-process timers.
+> - Without Redis, the daily summary email is skipped; everything else falls back to in-process timers.
 > - Custom hoodie designer (optional) is not built; it stays in Future Enhancements.
 
 - Reviews and ratings (verified purchases), wishlist.

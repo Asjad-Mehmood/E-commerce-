@@ -14,7 +14,7 @@ export function docsRouter(): Router {
     "/",
     swaggerUi.serve,
     swaggerUi.setup(spec, {
-      customSiteTitle: "Hoodie Store API",
+      customSiteTitle: "Urban Store API",
       swaggerOptions: { persistAuthorization: true, withCredentials: true },
     }),
   );

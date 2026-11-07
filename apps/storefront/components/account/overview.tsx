@@ -4,7 +4,7 @@ import { Button, Card } from "@hoodie/ui";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useMe } from "@/hooks/use-auth";
+import { useEmailEnabled, useMe } from "@/hooks/use-auth";
 import { useAddresses } from "@/hooks/use-addresses";
 import { OrderList, useMyOrders } from "../orders/my-orders";
 import { api } from "@/lib/api";
@@ -14,6 +14,7 @@ export function AccountOverview() {
   const { data: addresses } = useAddresses();
   const { data: orders } = useMyOrders(3);
   const [sending, setSending] = useState(false);
+  const emailEnabled = useEmailEnabled();
   if (!me) return null;
   const defaultAddress = addresses?.find((a) => a.isDefault);
 
@@ -35,7 +36,7 @@ export function AccountOverview() {
         Hi <strong>{me.name.split(" ")[0]}</strong>, welcome back.
       </p>
 
-      {!me.emailVerified && (
+      {!me.emailVerified && emailEnabled && (
         <Card className="border-warning/40 bg-warning/10 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">
             Please verify <strong>{me.email}</strong> so we can send your order updates.

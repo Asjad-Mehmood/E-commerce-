@@ -59,7 +59,8 @@ describe("POST /checkout/quote", () => {
     const product = await createTestProduct({ price: 300000 });
     const agent = await cartWith([[product.variants[0]!.id, 2]]);
     const q = (await agent.post("/api/v1/checkout/quote").send({ city: "Lahore" })).body.data;
-    expect(q).toMatchObject({ shipping: 0, total: 600000, amountToFreeShipping: 0 });
+    // Quotes default to Cash on Delivery, which adds the Lahore COD fee.
+    expect(q).toMatchObject({ shipping: 0, codFee: 5000, total: 605000, amountToFreeShipping: 0 });
     expect(q.shippingOptions[0]).toMatchObject({ isFree: true });
   });
 

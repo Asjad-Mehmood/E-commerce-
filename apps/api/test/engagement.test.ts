@@ -6,7 +6,7 @@ import { prisma } from "../src/lib/prisma";
 import { sign } from "../src/lib/signed";
 import { sendCartReminders } from "../src/modules/engagement/abandoned-carts";
 import { sendDailyDigest } from "../src/modules/engagement/digest";
-import { sendReviewRequest } from "../src/modules/reviews/review-request";
+import { sendDueReviewRequests, sendReviewRequest } from "../src/modules/reviews/review-request";
 import {
   app,
   cartWith,
@@ -113,6 +113,25 @@ describe("reviews", () => {
       body: "Exactly as pictured, love it.",
     });
     expect(await sendReviewRequest(row.id)).toBe(0);
+  });
+
+  it("finds orders delivered a week ago and asks each once", async () => {
+    const product = await createTestProduct();
+    const { agent, user } = await signedInAgent();
+    const order = await placeOrderAs(agent, user.email, [[product.variants[0]!.id, 1]]);
+    await deliver(order.orderNumber);
+    const day = 24 * 60 * 60 * 1000;
+    const inEightDays = new Date(Date.now() + 8 * day);
+    const asked = () => mailTo(user.email).filter((m) => m.subject.startsWith("How's your")).length;
+
+    await sendDueReviewRequests(new Date(Date.now() + 2 * day));
+    expect(asked()).toBe(0); // too soon
+    await sendDueReviewRequests(inEightDays);
+    expect(asked()).toBe(1);
+    await sendDueReviewRequests(inEightDays);
+    expect(asked()).toBe(1); // only once
+    const row = await prisma.order.findUniqueOrThrow({ where: { orderNumber: order.orderNumber } });
+    expect(row.reviewRequestedAt).not.toBeNull();
   });
 });
 

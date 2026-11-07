@@ -1,9 +1,7 @@
 "use client";
 
-import type { ApiResponse, AuthProvidersDTO } from "@hoodie/types";
-import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { useAuthProviders } from "@/hooks/use-auth";
 import { siteConfig } from "@/lib/config";
 import { safeNext } from "./auth-card";
 
@@ -20,11 +18,7 @@ export function GoogleButton() {
   const params = useSearchParams();
   const error = params.get("error");
   const next = safeNext(params.get("next"));
-  const providers = useQuery({
-    queryKey: ["auth-providers"],
-    queryFn: async () => (await api<ApiResponse<AuthProvidersDTO>>("/auth/providers")).data,
-    staleTime: Infinity,
-  });
+  const providers = useAuthProviders();
 
   return (
     <>

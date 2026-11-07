@@ -40,8 +40,8 @@ const STORE_DEFAULTS = {
   "tax.rate": 0,
   "tax.inclusive": true,
   "payments.cod.enabled": true,
-  "payments.card.enabled": true,
-  "orders.numberPrefix": "HD-",
+  "payments.card.enabled": false,
+  "orders.numberPrefix": "US-",
 };
 
 interface Customer {

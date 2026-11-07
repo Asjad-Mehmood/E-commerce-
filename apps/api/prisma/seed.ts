@@ -162,7 +162,7 @@ async function seedCatalog() {
       status: p.status,
       isFeatured: p.isFeatured,
       soldCount: p.soldCount,
-      seoTitle: `${p.title} | Hoodie Store`,
+      seoTitle: `${p.title} | Urban Store`,
       seoDescription: p.description.slice(0, 155),
       publishedAt: p.status === "ACTIVE" ? new Date() : null,
       categories: { set: p.categories.map((slug) => ({ slug })) },

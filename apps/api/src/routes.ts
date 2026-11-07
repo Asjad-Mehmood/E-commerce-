@@ -32,6 +32,7 @@ import { adminOrdersRouter } from "./modules/orders/admin-orders.routes";
 import { myOrdersRouter, ordersRouter } from "./modules/orders/orders.routes";
 import { paymentsRouter } from "./modules/payments/payments.routes";
 import { searchRouter } from "./modules/catalog/search.routes";
+import { mediaRouter } from "./modules/media/media.routes";
 import {
   adminNewsletterRouter,
   emailPreferencesRouter,
@@ -49,6 +50,7 @@ apiRouter.use("/me", accountRouter);
 apiRouter.use("/products", productsRouter);
 apiRouter.use("/products", productReviewsRouter);
 apiRouter.use("/search", searchRouter);
+apiRouter.use("/media", mediaRouter);
 apiRouter.use("/categories", categoriesRouter);
 apiRouter.use("/collections", collectionsRouter);
 apiRouter.use("/filters", filtersRouter);

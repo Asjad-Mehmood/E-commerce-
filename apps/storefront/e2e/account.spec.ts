@@ -35,7 +35,8 @@ test("register keeps the guest cart, then manage addresses and sign out", async 
 
   await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByText("Hi Playwright, welcome back.")).toBeVisible();
-  await expect(page.getByText(`Please verify ${email}`)).toBeVisible();
+  // Email isn't set up in the e2e store, so no "verify your email" prompt.
+  await expect(page.getByText(`Please verify ${email}`)).toHaveCount(0);
   await expect(page.getByTestId("cart-count")).toHaveText("1"); // guest cart merged
 
   // Address book

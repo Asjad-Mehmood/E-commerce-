@@ -4,7 +4,7 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "Admin", template: "%s | Hoodie Admin" },
+  title: { default: "Admin", template: "%s | Urban Store Admin" },
   robots: { index: false, follow: false },
 };
 

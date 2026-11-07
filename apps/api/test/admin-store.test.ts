@@ -300,8 +300,8 @@ describe("settings and audit log", () => {
       currency: "PKR",
       timeZone: "Asia/Karachi",
       paymentProvider: "demo",
-      emailProvider: "log",
-      uploads: "local",
+      emailProvider: null,
+      uploads: "database",
     });
 
     const none = await agent
@@ -327,39 +327,45 @@ describe("settings and audit log", () => {
   });
 });
 
-describe("local uploads", () => {
-  it("stores an image and serves it cross-origin", async () => {
+describe("image uploads (stored in the database)", () => {
+  it("stores an image and serves it cross-origin with long caching", async () => {
     const { agent } = await signedInAgent("MANAGER");
     expect((await agent.get("/api/v1/admin/uploads/config")).body.data).toEqual({
-      provider: "local",
-      maxBytes: 5 * 1024 * 1024,
+      provider: "database",
+      maxBytes: 4 * 1024 * 1024,
     });
 
     const res = await agent
-      .post("/api/v1/admin/uploads/local?folder=products")
+      .post("/api/v1/admin/uploads/media?folder=products")
       .set("Content-Type", "image/png")
       .send(PNG_1PX);
     expect(res.status).toBe(201);
     const url = new URL(res.body.data.url);
-    expect(url.pathname).toMatch(/^\/uploads\/products\/[\w-]+\.png$/);
+    expect(url.pathname).toMatch(/^\/api\/v1\/media\/\w+\.png$/);
 
-    const file = await request(app).get(url.pathname);
+    const file = await request(app).get(url.pathname).buffer(true);
     expect(file.status).toBe(200);
     expect(file.headers["content-type"]).toBe("image/png");
     expect(file.headers["cross-origin-resource-policy"]).toBe("cross-origin");
+    expect(file.headers["cache-control"]).toContain("immutable");
+    expect(Buffer.compare(file.body as Buffer, PNG_1PX)).toBe(0);
+
+    const again = await request(app).get(url.pathname).set("If-None-Match", file.headers.etag!);
+    expect(again.status).toBe(304);
+    expect((await request(app).get("/api/v1/media/missing.png")).status).toBe(404);
   });
 
   it("rejects files that are not images, whatever they claim to be", async () => {
     const { agent } = await signedInAgent("MANAGER");
     const res = await agent
-      .post("/api/v1/admin/uploads/local?folder=products")
+      .post("/api/v1/admin/uploads/media?folder=products")
       .set("Content-Type", "image/png")
       .send(Buffer.from("<script>alert(1)</script>............"));
     expect(res.status).toBe(400);
     expect(
       (
         await agent
-          .post("/api/v1/admin/uploads/local?folder=elsewhere")
+          .post("/api/v1/admin/uploads/media?folder=elsewhere")
           .set("Content-Type", "image/png")
           .send(PNG_1PX)
       ).status,
@@ -368,10 +374,72 @@ describe("local uploads", () => {
     expect(
       (
         await support
-          .post("/api/v1/admin/uploads/local?folder=products")
+          .post("/api/v1/admin/uploads/media?folder=products")
           .set("Content-Type", "image/png")
           .send(PNG_1PX)
       ).status,
     ).toBe(403);
+  });
+});
+
+describe("email settings", () => {
+  it("stores SMTP details encrypted, never returns secrets, and can be turned off", async () => {
+    await prisma.setting.deleteMany({ where: { key: { startsWith: "email." } } });
+    const { agent } = await signedInAgent("SUPER_ADMIN");
+    const smtp = {
+      provider: "smtp",
+      from: "Urban Store <orders@urbanstore.pk>",
+      host: "127.0.0.1",
+      port: 1, // nothing listens here, so the test email fails quickly
+      secure: false,
+      user: "orders@urbanstore.pk",
+    };
+
+    const missing = await agent.put("/api/v1/admin/settings/email").send(smtp);
+    expect(missing.status).toBe(422);
+    expect(missing.body.error.details.fieldErrors.password).toBeDefined();
+
+    const saved = await agent
+      .put("/api/v1/admin/settings/email")
+      .send({ ...smtp, password: "app-password-123" });
+    expect(saved.status).toBe(200);
+    expect(saved.body.data).toMatchObject({
+      provider: "smtp",
+      configured: true,
+      source: "settings",
+      smtp: { host: "127.0.0.1", port: 1, hasPassword: true },
+    });
+    expect(JSON.stringify(saved.body)).not.toContain("app-password-123");
+    const stored = await prisma.setting.findUniqueOrThrow({
+      where: { key: "email.smtp.password" },
+    });
+    expect(String(stored.value)).toMatch(/^enc:v1:/);
+    expect(JSON.stringify(stored.value)).not.toContain("app-password-123");
+
+    // Saving again without a password keeps the old one.
+    const kept = await agent.put("/api/v1/admin/settings/email").send({ ...smtp, user: "other" });
+    expect(kept.body.data.smtp).toMatchObject({ user: "other", hasPassword: true });
+
+    const test = await agent
+      .post("/api/v1/admin/settings/email/test")
+      .send({ to: "owner@urbanstore.pk" });
+    expect(test.status).toBe(502);
+    expect(test.body.error.message).toMatch(/could not be sent/);
+
+    const off = await agent.put("/api/v1/admin/settings/email").send({ provider: "none" });
+    expect(off.body.data).toMatchObject({ provider: "none", configured: false });
+    expect((await request(app).get("/api/v1/auth/providers")).body.data.email).toBe(false);
+
+    const { agent: manager } = await signedInAgent("MANAGER");
+    expect((await manager.get("/api/v1/admin/settings/email")).status).toBe(403);
+  });
+
+  it("shows the invitation link when email isn't set up", async () => {
+    const { agent } = await signedInAgent("SUPER_ADMIN");
+    await agent.put("/api/v1/admin/settings/email").send({ provider: "none" });
+    const res = await agent
+      .post("/api/v1/admin/staff")
+      .send({ email: uniqueEmail("staff"), name: "No Email Yet", role: "SUPPORT" });
+    expect(res.body.data.inviteLink).toMatch(/\/set-password\?token=/);
   });
 });

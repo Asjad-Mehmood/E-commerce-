@@ -44,6 +44,8 @@ export function Staff() {
     action: "block" | "unblock" | "remove";
   } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  /** Set-password link to pass on by hand while email isn't set up. */
+  const [link, setLink] = useState<{ name: string; email: string; url: string } | null>(null);
   const { register, handleSubmit, reset, setError, formState } = useForm<{
     name: string;
     email: string;
@@ -57,11 +59,15 @@ export function Staff() {
     mutationFn: (body: Record<string, unknown>) =>
       api<ApiResponse<StaffMemberDTO>>("/admin/staff", { method: "POST", body }),
     onSuccess: (res) => {
-      toast.success(
-        res.data.invitePending
-          ? `Invitation sent to ${res.data.email}`
-          : `${res.data.name} now has staff access`,
-      );
+      if (res.data.inviteLink) {
+        setLink({ name: res.data.name, email: res.data.email, url: res.data.inviteLink });
+      } else {
+        toast.success(
+          res.data.invitePending
+            ? `Invitation sent to ${res.data.email}`
+            : `${res.data.name} now has staff access`,
+        );
+      }
       setInviteOpen(false);
       refresh();
     },
@@ -87,8 +93,13 @@ export function Staff() {
     onError: (err) => toast.error(errorMessage(err)),
   });
   const resend = useMutation({
-    mutationFn: (id: string) => api(`/admin/staff/${id}/resend-invite`, { method: "POST" }),
-    onSuccess: () => toast.success("A new invitation link was sent"),
+    mutationFn: (id: string) =>
+      api<ApiResponse<StaffMemberDTO>>(`/admin/staff/${id}/resend-invite`, { method: "POST" }),
+    onSuccess: (res) => {
+      if (res.data.inviteLink) {
+        setLink({ name: res.data.name, email: res.data.email, url: res.data.inviteLink });
+      } else toast.success("A new invitation link was sent");
+    },
     onError: (err) => toast.error(errorMessage(err)),
   });
 
@@ -250,8 +261,9 @@ export function Staff() {
           })}
         >
           <p className="text-muted text-sm">
-            They get an email with a link to choose a password (valid for 72 hours). If the email
-            already has a customer account, that account gets staff access instead.
+            They get an email with a link to choose a password (valid for 72 hours); while email
+            isn&apos;t set up, you get the link to send them yourself. If the email already has a
+            customer account, that account gets staff access instead.
           </p>
           {formError && (
             <p role="alert" className="bg-danger/10 text-danger rounded-lg px-3 py-2 text-sm">
@@ -278,6 +290,36 @@ export function Staff() {
             </Select>
           </Field>
         </form>
+      </Dialog>
+
+      <Dialog
+        open={!!link}
+        onClose={() => setLink(null)}
+        title={`Send ${link?.name ?? "them"} this link`}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                void navigator.clipboard
+                  ?.writeText(link?.url ?? "")
+                  .then(() => toast.success("Link copied"));
+              }}
+            >
+              Copy link
+            </Button>
+            <Button onClick={() => setLink(null)}>Done</Button>
+          </div>
+        }
+      >
+        <div className="space-y-3 text-sm">
+          <p>
+            Email isn&apos;t set up yet, so no invitation was emailed. Send this link to{" "}
+            <strong>{link?.email}</strong> yourself (WhatsApp, SMS…). It lets them choose a password
+            and works once, for 72 hours.
+          </p>
+          <Input readOnly value={link?.url ?? ""} onFocus={(e) => e.currentTarget.select()} />
+        </div>
       </Dialog>
 
       <ConfirmDialog

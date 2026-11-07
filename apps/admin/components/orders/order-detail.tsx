@@ -149,7 +149,7 @@ function FulfilmentCard({ order }: { order: Order }) {
       >
         <div className="space-y-4">
           <p className="text-muted text-sm">
-            The customer gets an email with the tracking details.
+            When email is set up, the customer gets an email with the tracking details.
           </p>
           <Field label="Courier" htmlFor={`${uid}-courier`}>
             <Input
@@ -201,7 +201,7 @@ function FulfilmentCard({ order }: { order: Order }) {
       >
         <div className="space-y-4 text-sm">
           <p>
-            The items go back into stock and the customer is emailed.
+            The items go back into stock and, when email is set up, the customer is emailed.
             {order.paymentMethod === "COD" && " No payment was collected, so nothing is refunded."}
           </p>
           <Field

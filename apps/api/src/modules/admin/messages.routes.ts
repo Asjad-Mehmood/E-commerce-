@@ -5,7 +5,9 @@ import {
   updateMessageSchema,
 } from "@hoodie/validation";
 import type { ContactMessage, Prisma } from "@prisma/client";
+import { isTest } from "../../config/env";
 import { audit } from "../../lib/audit";
+import { emailEnabled } from "../../lib/email-config";
 import { emailLayout, esc } from "../../lib/email-layout";
 import { ok, paginated, skipTake } from "../../lib/http";
 import { sendMail } from "../../lib/mailer";
@@ -83,6 +85,11 @@ export const adminMessagesRouter = defineRoutes("/admin/messages", "Admin: Messa
     body: replyMessageSchema,
     handler: async ({ req, params, body }) => {
       const message = await findMessage(params.id!);
+      if (!isTest && !(await emailEnabled())) {
+        throw AppError.conflict(
+          "Email isn't set up yet, so replies can't be sent. Set it up in Store settings → Email, or reply from your own inbox.",
+        );
+      }
       const store = await storeInfo();
       const subject = `Re: ${message.subject || `Your message to ${store.name}`}`;
       const quoted = message.message

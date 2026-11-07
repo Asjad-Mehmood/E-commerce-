@@ -381,16 +381,16 @@ export const faqs = [
 ];
 
 export const settings: Record<string, unknown> = {
-  "store.name": "Hoodie Store",
-  "store.email": "support@hoodie.local",
+  "store.name": "Urban Store",
+  "store.email": "support@urbanstore.pk",
   "store.phone": "+92 300 0000000",
   "store.currency": "PKR",
   "store.locale": "en-PK",
   "tax.rate": 0,
   "tax.inclusive": true,
-  "payments.card.enabled": true,
+  "payments.card.enabled": false,
   "payments.cod.enabled": true,
-  "orders.numberPrefix": "HD-",
+  "orders.numberPrefix": "US-",
   "returns.windowDays": 14,
   "reviews.autoApprove": false,
   "notifications.dailyDigest": true,

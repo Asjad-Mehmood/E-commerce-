@@ -1,11 +1,11 @@
 /** Public runtime config. Values come from env vars with development defaults. */
 export const siteConfig = {
-  name: process.env.NEXT_PUBLIC_STORE_NAME ?? "Hoodie Store",
+  name: process.env.NEXT_PUBLIC_STORE_NAME ?? "Urban Store",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   /** API URL used by the browser. */
   apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1",
   description:
-    "Premium heavyweight hoodies: pullovers, zip-ups and oversized fits, delivered across Pakistan.",
+    "Urban Store: everyday streetwear hoodies made in Pakistan. Pullovers, zip-ups and oversized fits, with Cash on Delivery nationwide.",
   currency: "PKR",
 };
 

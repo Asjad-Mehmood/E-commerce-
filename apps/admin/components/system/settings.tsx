@@ -129,12 +129,13 @@ export function Settings() {
           >
             <Switch
               label="Card payments"
+              disabled={!system.paymentProvider}
               hint={
                 system.paymentProvider === "stripe"
                   ? "Processed by Stripe."
                   : system.paymentProvider === "demo"
                     ? "Demo mode: only Stripe test cards work and no real money moves. Add Stripe keys to the API to take real payments."
-                    : "Unavailable: no Stripe keys are configured, so checkout won't offer cards."
+                    : "Off: cards need Stripe keys on the server (STRIPE_SECRET_KEY). Customers pay Cash on Delivery."
               }
               {...register(FIELD("payments.card.enabled"))}
             />
@@ -171,6 +172,20 @@ export function Settings() {
               {...register(FIELD("tax.inclusive"))}
             />
           </Section>
+
+          <Section
+            title="Email"
+            description={
+              system.emailProvider
+                ? "Order confirmations, shipping updates and password resets are being sent."
+                : "Email isn't set up, so the store sends no emails. Orders still work: customers see their order details on screen."
+            }
+            actions={
+              <Link href="/settings/email" className="text-sm font-medium underline">
+                {system.emailProvider ? "Email settings" : "Set up email"}
+              </Link>
+            }
+          />
 
           <Section title="Reviews and emails">
             <Switch
@@ -227,13 +242,13 @@ export function Settings() {
                 ],
                 [
                   "Email",
-                  system.emailProvider === "resend" ? (
+                  system.emailProvider ? (
                     <Badge key="e" tone="success">
-                      Resend
+                      {system.emailProvider === "smtp" ? "SMTP" : "Resend"}
                     </Badge>
                   ) : (
                     <Badge key="e" tone="warning">
-                      Printed to the API log
+                      Off: no emails sent
                     </Badge>
                   ),
                 ],
@@ -243,13 +258,9 @@ export function Settings() {
                     <Badge key="u" tone="success">
                       Cloudinary
                     </Badge>
-                  ) : system.uploads === "local" ? (
-                    <Badge key="u" tone="warning">
-                      This server&apos;s disk
-                    </Badge>
                   ) : (
-                    <Badge key="u" tone="danger">
-                      Not configured
+                    <Badge key="u" tone="neutral">
+                      Database
                     </Badge>
                   ),
                 ],
@@ -266,6 +277,11 @@ export function Settings() {
               <li>
                 <Link href="/content" className="underline">
                   Announcement bar, banners and pages
+                </Link>
+              </li>
+              <li>
+                <Link href="/settings/email" className="underline">
+                  Email (SMTP or Resend)
                 </Link>
               </li>
               <li>

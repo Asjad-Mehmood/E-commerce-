@@ -11,6 +11,7 @@ import type { CookieOptions, Request, Response } from "express";
 import { z } from "zod";
 import { env } from "../../config/env";
 import { clearAuthCookies, clearCartCookie, COOKIE, setAuthCookies } from "../../lib/cookies";
+import { emailEnabled } from "../../lib/email-config";
 import { ok } from "../../lib/http";
 import { defineRoutes, route } from "../../lib/route";
 import { currentUser } from "../../middleware/auth";
@@ -191,7 +192,8 @@ export const authRouter = defineRoutes("/auth", "Auth", [
     path: "/providers",
     summary: "Which sign-in methods are available (Google needs keys on the server)",
     access: "public",
-    handler: () => ok<AuthProvidersDTO>({ google: googleEnabled() }),
+    handler: async () =>
+      ok<AuthProvidersDTO>({ google: googleEnabled(), email: await emailEnabled() }),
   }),
   route({
     method: "get",

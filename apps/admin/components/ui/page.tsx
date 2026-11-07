@@ -46,7 +46,7 @@ export function Section({
   description?: ReactNode;
   actions?: ReactNode;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <Card className={cn("space-y-4", className)}>

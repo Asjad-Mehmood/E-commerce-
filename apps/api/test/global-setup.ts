@@ -35,4 +35,13 @@ export default function setup() {
       );
     }
   }
+
+  // The store ships with card payments switched off (Cash on Delivery only), but
+  // the card code paths are still tested, so switch them on in the test database.
+  execSync("pnpm exec prisma db execute --stdin --schema prisma/schema.prisma", {
+    stdio: ["pipe", "pipe", "pipe"],
+    env,
+    input: `INSERT INTO "Setting" (key, value, "updatedAt") VALUES ('payments.card.enabled', 'true'::jsonb, now())
+      ON CONFLICT (key) DO UPDATE SET value = 'true'::jsonb, "updatedAt" = now();`,
+  });
 }

@@ -9,6 +9,35 @@ type Folder = "products" | "categories" | "collections" | "banners";
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"];
 
+/** Longest side of photos stored in the database. */
+const MAX_SIDE = 1600;
+
+/**
+ * Shrinks a photo in the browser (longest side 1600 px, WebP) so it stays
+ * small in the database and fast on the storefront. GIFs (maybe animated) and
+ * images that wouldn't get smaller are sent as they are.
+ */
+export async function shrinkImage(file: File): Promise<Blob> {
+  if (file.type === "image/gif" || typeof createImageBitmap !== "function") return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/webp", 0.85),
+    );
+    // Some browsers fall back to PNG when they can't encode WebP.
+    if (!blob || !ACCEPTED.includes(blob.type)) return file;
+    return blob.size < file.size ? blob : file;
+  } catch {
+    return file;
+  }
+}
+
 export function useUploadConfig() {
   return useQuery({
     queryKey: ["admin", "uploads", "config"],
@@ -19,7 +48,8 @@ export function useUploadConfig() {
 
 /**
  * Uploads an image and resolves to its public URL: straight to Cloudinary with a
- * signature from the API, or to the API itself when Cloudinary isn't configured.
+ * signature from the API, or (no Cloudinary account needed) resized in the
+ * browser and stored in the database by the API.
  */
 export function useImageUpload(folder: Folder) {
   const { data: config } = useUploadConfig();
@@ -29,20 +59,20 @@ export function useImageUpload(folder: Folder) {
       if (!config?.provider) throw new Error("Image uploads are not configured on the server.");
       if (!ACCEPTED.includes(file.type))
         throw new Error("Use a JPEG, PNG, WebP, AVIF or GIF image.");
-      if (file.size > config.maxBytes) {
-        throw new Error(`Images can be up to ${Math.round(config.maxBytes / 1024 / 1024)} MB.`);
-      }
+      const tooBig = () =>
+        new Error(`Images can be up to ${Math.round(config.maxBytes / 1024 / 1024)} MB.`);
 
-      if (config.provider === "local") {
+      if (config.provider === "database") {
+        const image = await shrinkImage(file);
+        if (image.size > config.maxBytes) throw tooBig();
         const res = await api<ApiResponse<{ url: string }>>(
-          `/admin/uploads/local?folder=${folder}`,
-          {
-            method: "POST",
-            body: file,
-          },
+          `/admin/uploads/media?folder=${folder}`,
+          { method: "POST", body: image },
         );
         return res.data.url;
       }
+
+      if (file.size > config.maxBytes) throw tooBig();
 
       const { data: sig } = await api<
         ApiResponse<{

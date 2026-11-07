@@ -1,5 +1,5 @@
 import type { CategoryDTO, CollectionDTO } from "@hoodie/types";
-import { Container } from "@hoodie/ui";
+import { Container, Logo } from "@hoodie/ui";
 import Link from "next/link";
 import { siteConfig } from "@/lib/config";
 import { getDataSafe } from "@/lib/server-api";
@@ -23,8 +23,8 @@ export async function Header() {
     <header className="border-line bg-canvas/95 sticky top-0 z-40 border-b backdrop-blur">
       <Container className="flex h-16 items-center gap-4">
         <MobileNavButton />
-        <Link href="/" className="text-lg font-black uppercase tracking-tight">
-          {siteConfig.name}
+        <Link href="/" aria-label={`${siteConfig.name} home`} className="shrink-0">
+          <Logo markClassName="size-7" />
         </Link>
 
         <nav aria-label="Main" className="ml-8 hidden items-center gap-1 lg:flex">

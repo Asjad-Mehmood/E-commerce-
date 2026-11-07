@@ -186,15 +186,15 @@ With `REDIS_URL` set, the API runs a **BullMQ** worker. Emails are queued and re
 
 Every marketing email (newsletter welcome, cart reminders) has a signed unsubscribe link; the storefront asks for a click before unsubscribing, because some email scanners open every link. Order emails are always sent.
 
-The worker runs inside the API by default. To run it separately, set `RUN_WORKER=false` on the API servers and start `node apps/api/dist/worker.js`. **Without Redis** the recurring jobs run on simple timers inside the API, emails are sent straight away, and the daily summary and review-request emails are skipped.
+The worker runs inside the API by default. To run it separately, set `RUN_WORKER=false` on the API servers and start `node apps/api/dist/worker.js`. **Without Redis** the recurring jobs run on simple timers inside the API, emails are sent straight away, and the daily summary email is skipped.
 
 ## Checkout and payments
 
 1. **Cart → checkout.** The checkout page asks the API for a live quote (`POST /checkout/quote`) whenever the city, delivery method or payment method changes. Shipping comes from the shipping zone for the city, with free standard delivery over the zone's threshold.
-2. **Place the order** (`POST /checkout`). In one database transaction every line is **sold** (Cash on Delivery) or **reserved** (card) with an atomic conditional update, so if any line is short the whole order rolls back. Orders get sequential numbers (`HD-10001`…). Re-sending the same `idempotencyKey` returns the same order, so a double click can't create two.
+2. **Place the order** (`POST /checkout`). In one database transaction every line is **sold** (Cash on Delivery) or **reserved** (card) with an atomic conditional update, so if any line is short the whole order rolls back. Orders get sequential numbers (`US-10001`…). Re-sending the same `idempotencyKey` returns the same order, so a double click can't create two.
 3. **Cash on Delivery** orders are confirmed immediately, and the customer gets a confirmation email.
 4. **Card** orders wait for payment for 15 minutes. Success turns the reservation into a sale and sends the confirmation email. A declined card can be retried. If the time runs out, a job releases the stock.
-5. **After the order:** the customer sees it at `/orders/HD-…?token=…` (the link in the email) or in their account. They can track it at `/track-order`, cancel it before it's prepared, and download a PDF invoice. Staff move orders along in the admin panel (processing → shipped → delivered), which emails the customer.
+5. **After the order:** the customer sees it at `/orders/US-…?token=…` (the link in the email) or in their account. They can track it at `/track-order`, cancel it before it's prepared, and download a PDF invoice. Staff move orders along in the admin panel (processing → shipped → delivered), which emails the customer.
 
 ### Demo payment mode (default)
 

@@ -1,11 +1,9 @@
 import { ErrorCode, type UploadConfigDTO } from "@hoodie/types";
 import { uploadSignSchema } from "@hoodie/validation";
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { env } from "../../config/env";
-import { randomToken } from "../../lib/crypto";
 import { ok } from "../../lib/http";
+import { prisma } from "../../lib/prisma";
 import { defineRoutes, route } from "../../lib/route";
 import { AppError } from "../../utils/app-error";
 
@@ -27,16 +25,27 @@ export function signCloudinaryParams(
     .digest("hex");
 }
 
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+/** Vercel functions accept request bodies up to 4.5 MB; the admin resizes photos first anyway. */
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 const cloudinaryConfigured = () =>
   !!(env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET);
 
-/** Where admin image uploads go: Cloudinary when configured, else local disk (if allowed). */
+/**
+ * Where admin image uploads go: Cloudinary when its keys are set, otherwise the
+ * database (no account or credentials needed; served by GET /media/:id).
+ */
 export function uploadProvider(): UploadConfigDTO["provider"] {
-  if (cloudinaryConfigured()) return "cloudinary";
-  return env.LOCAL_UPLOADS ? "local" : null;
+  return cloudinaryConfigured() ? "cloudinary" : "database";
 }
+
+export const MIME: Record<NonNullable<ReturnType<typeof sniffImage>>, string> = {
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  avif: "image/avif",
+};
 
 /** Detects the image type from its first bytes (the Content-Type header is not trusted). */
 export function sniffImage(buf: Buffer): "jpg" | "png" | "webp" | "gif" | "avif" | null {
@@ -51,49 +60,40 @@ export function sniffImage(buf: Buffer): "jpg" | "png" | "webp" | "gif" | "avif"
   return null;
 }
 
-/** Absolute directory locally stored uploads are written to and served from. */
-export const uploadsDir = () => path.resolve(env.UPLOADS_DIR);
-
 export const adminUploadsRouter = defineRoutes("/admin/uploads", "Admin: Uploads", [
   route({
     method: "get",
     path: "/config",
-    summary: "How images are uploaded: `cloudinary` (signed direct upload), `local` or null",
+    summary: "How images are uploaded: `cloudinary` (signed direct upload) or `database`",
     access: "MANAGER",
     handler: () => ok<UploadConfigDTO>({ provider: uploadProvider(), maxBytes: MAX_UPLOAD_BYTES }),
   }),
   route({
     method: "post",
-    path: "/local",
-    summary: "Upload an image to this server (when Cloudinary is not configured)",
+    path: "/media",
+    summary: "Upload an image, stored in the database (no image-hosting account needed)",
     description:
-      "Send the raw image bytes with an `image/*` Content-Type and `?folder=products`. JPEG, PNG, WebP, GIF and AVIF up to 5 MB. Returns the public URL. Disabled in production unless LOCAL_UPLOADS=true.",
+      "Send the raw image bytes with an `image/*` Content-Type and `?folder=products`. JPEG, PNG, WebP, GIF or AVIF up to 4 MB (the admin resizes photos before uploading). Returns the public URL.",
     access: "MANAGER",
     query: uploadSignSchema,
     status: 201,
     handler: async ({ req, query }) => {
-      if (uploadProvider() !== "local") {
-        throw new AppError(
-          ErrorCode.SERVICE_UNAVAILABLE,
-          cloudinaryConfigured()
-            ? "Upload images to Cloudinary (POST /admin/uploads/sign)"
-            : "Image uploads are not configured",
-          undefined,
-          503,
-        );
-      }
       const body = req.body as unknown;
       if (!Buffer.isBuffer(body) || body.length === 0) {
         throw AppError.badRequest("Send the image bytes with an image/* Content-Type");
       }
       const ext = sniffImage(body);
       if (!ext) throw AppError.badRequest("Only JPEG, PNG, WebP, GIF and AVIF images are allowed");
-
-      const name = `${randomToken(16)}.${ext}`;
-      const dir = path.join(uploadsDir(), query.folder);
-      await mkdir(dir, { recursive: true });
-      await writeFile(path.join(dir, name), body);
-      return ok({ url: `${env.API_PUBLIC_URL}/uploads/${query.folder}/${name}` });
+      const media = await prisma.media.create({
+        data: {
+          folder: query.folder,
+          contentType: MIME[ext],
+          bytes: new Uint8Array(body),
+          size: body.length,
+        },
+        select: { id: true },
+      });
+      return ok({ url: `${env.API_PUBLIC_URL}/api/v1/media/${media.id}.${ext}` });
     },
   }),
   route({

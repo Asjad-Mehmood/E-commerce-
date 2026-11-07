@@ -33,25 +33,24 @@ const envSchema = z
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
     COOKIE_DOMAIN: z.string().optional(),
     COOKIE_SECURE: bool(false),
+    /** Optional key for encrypting secrets saved in the admin settings (defaults to one derived from JWT_ACCESS_SECRET). */
+    SETTINGS_SECRET: z.string().min(16).optional(),
 
     // Links in emails
     STOREFRONT_URL: z.url().default("http://localhost:3000"),
     ADMIN_URL: z.url().default("http://localhost:3001"),
-    /** Public origin of this API (used for locally stored uploads). */
+    /** Public origin of this API (used in the URLs of uploaded images). */
     API_PUBLIC_URL: z.url().default("http://localhost:4000"),
 
-    // Email (console in development, Resend when RESEND_API_KEY is set)
+    // Email is set up in the admin (Store settings → Email). RESEND_API_KEY here is
+    // an optional server-side fallback. Until one of them is set, no email is sent.
     RESEND_API_KEY: z.string().optional(),
-    EMAIL_FROM: z.string().default("Hoodie Store <no-reply@hoodie.local>"),
+    EMAIL_FROM: z.string().default("Urban Store <orders@urbanstore.pk>"),
 
     // Uploads (signed direct-to-Cloudinary uploads)
     CLOUDINARY_CLOUD_NAME: z.string().optional(),
     CLOUDINARY_API_KEY: z.string().optional(),
     CLOUDINARY_API_SECRET: z.string().optional(),
-    // Without Cloudinary, images can be stored on this server's disk (on by default
-    // outside production; use Cloudinary or a persistent volume in production).
-    LOCAL_UPLOADS: z.enum(["true", "false"]).optional(),
-    UPLOADS_DIR: z.string().default("uploads"),
 
     // Payments. With STRIPE_SECRET_KEY set, cards go through Stripe; otherwise a
     // built-in demo provider (Stripe test cards, no real money) is used, which is
@@ -81,8 +80,6 @@ const envSchema = z
       e.API_DOCS_ENABLED === undefined
         ? e.NODE_ENV !== "production"
         : e.API_DOCS_ENABLED === "true",
-    LOCAL_UPLOADS:
-      e.LOCAL_UPLOADS === undefined ? e.NODE_ENV !== "production" : e.LOCAL_UPLOADS === "true",
     // Demo card payments default to on, except in production.
     ALLOW_DEMO_PAYMENTS:
       e.ALLOW_DEMO_PAYMENTS === undefined

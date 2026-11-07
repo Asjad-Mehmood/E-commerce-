@@ -158,8 +158,8 @@ export function ReturnDetail({ id }: { id: string }) {
       void qc.invalidateQueries({ queryKey: ["admin", "order", r.order.number] });
       toast.success(
         {
-          approve: "Approved. The customer was emailed the return address.",
-          reject: "Declined. The customer was emailed.",
+          approve: "Return approved.",
+          reject: "Return declined.",
           receive: "Marked as received.",
           refund: `Refunded ${formatMoney(r.refundAmount ?? 0)}.`,
         }[action],
@@ -381,12 +381,15 @@ export function ReturnDetail({ id }: { id: string }) {
           )}
           {dialog === "approve" && (
             <p>
-              The customer is emailed the store address (from Store settings) and asked to send the
-              items back.
+              When email is set up, the customer is emailed the store address (from Store settings)
+              and asked to send the items back.
             </p>
           )}
           {dialog === "reject" && (
-            <p>The order goes back to Delivered and the customer is emailed your reason.</p>
+            <p>
+              The order goes back to Delivered and, when email is set up, the customer is emailed
+              your reason.
+            </p>
           )}
           {dialog === "receive" && (
             <Checkbox

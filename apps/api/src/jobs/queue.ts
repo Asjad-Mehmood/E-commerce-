@@ -11,7 +11,7 @@ export interface JobData {
   "abandoned-carts": Record<string, never>;
   "daily-digest": Record<string, never>;
   "stock-alerts": { variantIds: string[] };
-  "review-request": { orderId: string };
+  "review-requests": Record<string, never>;
 }
 export type JobName = keyof JobData;
 

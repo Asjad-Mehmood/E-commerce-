@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, passwordSchema } from "@hoodie/validation";
-import { Button, Field, Input } from "@hoodie/ui";
+import { Button, Field, Input, Logo } from "@hoodie/ui";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -22,7 +22,7 @@ export function AuthCard({ title, children }: { title: string; children: ReactNo
   return (
     <main className="flex min-h-dvh items-center justify-center p-4">
       <div className="border-line bg-canvas w-full max-w-sm rounded-2xl border p-6 shadow-sm sm:p-8">
-        <p className="font-black uppercase tracking-tight">Hoodie Admin</p>
+        <Logo label="Admin" />
         <h1 className="mt-6 text-xl font-bold">{title}</h1>
         <div className="mt-6">{children}</div>
       </div>

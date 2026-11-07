@@ -45,7 +45,7 @@ const profile = (over: Partial<GoogleProfile> = {}): GoogleProfile => ({
 
 describe("Google sign-in", () => {
   it("reports whether it is available", async () => {
-    expect((await request(app).get("/api/v1/auth/providers")).body.data).toEqual({ google: true });
+    expect((await request(app).get("/api/v1/auth/providers")).body.data.google).toBe(true);
   });
 
   it("creates an account and signs in, returning to the page the shopper came from", async () => {

@@ -16,7 +16,7 @@ export default function ContactPage() {
         <dl className="mt-8 space-y-4 text-sm">
           <div>
             <dt className="font-semibold">Email</dt>
-            <dd className="text-muted">support@hoodie.local</dd>
+            <dd className="text-muted">support@urbanstore.pk</dd>
           </div>
           <div>
             <dt className="font-semibold">Hours</dt>

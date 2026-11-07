@@ -28,7 +28,7 @@ export function FormMessage({
   tone = "error",
   children,
 }: {
-  tone?: "error" | "success";
+  tone?: "error" | "success" | "info";
   children: ReactNode;
 }) {
   return (
@@ -37,7 +37,9 @@ export function FormMessage({
       className={
         tone === "error"
           ? "bg-danger/10 text-danger rounded-lg p-3 text-sm"
-          : "bg-success/10 text-success rounded-lg p-3 text-sm"
+          : tone === "info"
+            ? "bg-surface text-ink rounded-lg p-3 text-sm"
+            : "bg-success/10 text-success rounded-lg p-3 text-sm"
       }
     >
       {children}

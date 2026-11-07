@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { env } from "../../config/env";
 
 /**
- * The secret in an order link (/orders/HD-10001?token=…), which lets a guest
+ * The secret in an order link (/orders/US-10001?token=…), which lets a guest
  * view their order without an account. Derived from the order id with a server
  * secret, so it never has to be stored and a retried checkout gets the same link.
  */

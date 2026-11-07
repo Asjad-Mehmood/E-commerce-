@@ -1,5 +1,6 @@
 import type {
   AuditLogEntryDTO,
+  EmailSettingsDTO,
   StaffMemberDTO,
   StoreSettingsDTO,
   StoreSettingsResponseDTO,
@@ -7,6 +8,8 @@ import type {
 import { ADMIN_ROLES, ErrorCode } from "@hoodie/types";
 import {
   auditLogQuerySchema,
+  emailSettingsSchema,
+  testEmailSchema,
   inviteStaffSchema,
   updateStaffSchema,
   updateStoreSettingsSchema,
@@ -16,7 +19,15 @@ import { env } from "../../config/env";
 import { audit } from "../../lib/audit";
 import { dayRange } from "../../lib/dates";
 import { ok, paginated, skipTake } from "../../lib/http";
-import { sendMail } from "../../lib/mailer";
+import {
+  clearEmailConfigCache,
+  emailEnabled,
+  loadEmailConfig,
+  readEmailSettings,
+  toEmailConfig,
+} from "../../lib/email-config";
+import { sendMail, sendWith } from "../../lib/mailer";
+import { decryptSecret, encryptSecret } from "../../lib/secrets";
 import { prisma } from "../../lib/prisma";
 import { defineRoutes, route } from "../../lib/route";
 import { getSettings, storeTimeZone } from "../../lib/settings";
@@ -28,6 +39,15 @@ import { getPaymentProvider } from "../payments";
 import { uploadProvider } from "./uploads.routes";
 
 const INVITE_TTL_MS = 72 * 60 * 60 * 1000;
+
+/**
+ * While email isn't set up the invitation can't be emailed, so the Super Admin
+ * gets the set-password link to pass on themselves (WhatsApp, in person...).
+ */
+async function inviteLinkIfNoEmail(token: string | null) {
+  if (!token || (await emailEnabled())) return {};
+  return { inviteLink: `${env.ADMIN_URL}/set-password?token=${encodeURIComponent(token)}` };
+}
 
 const toStaff = (u: User): StaffMemberDTO => ({
   id: u.id,
@@ -100,12 +120,13 @@ export const adminStaffRouter = defineRoutes("/admin/staff", "Admin: Staff & set
         ? null
         : await issueToken(user.id, "PASSWORD_RESET", INVITE_TTL_MS);
       void sendMail(staffInviteEmail(user.email, user.name, body.role, inviter.name, token));
+      const link = await inviteLinkIfNoEmail(token);
       await audit(req, "staff.invite", "User", user.id, {
         email: user.email,
         role: body.role,
         existingAccount: !!existing,
       });
-      return ok(toStaff(user));
+      return ok({ ...toStaff(user), ...link });
     },
   }),
   route({
@@ -121,7 +142,7 @@ export const adminStaffRouter = defineRoutes("/admin/staff", "Admin: Staff & set
         staffInviteEmail(user.email, user.name, user.role, currentUser(req).name, token),
       );
       await audit(req, "staff.resend-invite", "User", user.id, { email: user.email });
-      return ok(toStaff(user));
+      return ok({ ...toStaff(user), ...(await inviteLinkIfNoEmail(token)) });
     },
   }),
   route({
@@ -162,18 +183,41 @@ export const adminStaffRouter = defineRoutes("/admin/staff", "Admin: Staff & set
 ]);
 
 const SETTINGS_DEFAULTS: StoreSettingsDTO = {
-  "store.name": "Hoodie Store",
-  "store.email": "support@hoodie.local",
+  "store.name": "Urban Store",
+  "store.email": "support@urbanstore.pk",
   "store.phone": "",
   "store.address": "",
   "tax.rate": 0,
   "tax.inclusive": true,
-  "payments.card.enabled": true,
+  "payments.card.enabled": false,
   "payments.cod.enabled": true,
   "returns.windowDays": 14,
   "reviews.autoApprove": false,
   "notifications.dailyDigest": true,
 };
+
+async function emailSettingsResponse(): Promise<EmailSettingsDTO> {
+  const s = await readEmailSettings();
+  const config = toEmailConfig(s);
+  const provider =
+    s["email.provider"] === "smtp" || s["email.provider"] === "resend"
+      ? s["email.provider"]
+      : "none";
+  return {
+    provider,
+    from: typeof s["email.from"] === "string" ? s["email.from"] : env.EMAIL_FROM,
+    smtp: {
+      host: typeof s["email.smtp.host"] === "string" ? s["email.smtp.host"] : "",
+      port: Number(s["email.smtp.port"]) || 587,
+      secure: s["email.smtp.secure"] === true,
+      user: typeof s["email.smtp.user"] === "string" ? s["email.smtp.user"] : "",
+      hasPassword: decryptSecret(s["email.smtp.password"]) !== null,
+    },
+    hasResendKey: decryptSecret(s["email.resend.apiKey"]) !== null,
+    configured: config !== null,
+    source: config ? (s["email.provider"] === undefined ? "environment" : "settings") : null,
+  };
+}
 
 async function settingsResponse(): Promise<StoreSettingsResponseDTO> {
   const [settings, currency, timeZone] = await Promise.all([
@@ -187,7 +231,7 @@ async function settingsResponse(): Promise<StoreSettingsResponseDTO> {
       currency: currency["store.currency"],
       timeZone,
       paymentProvider: getPaymentProvider()?.name ?? null,
-      emailProvider: env.RESEND_API_KEY ? "resend" : "log",
+      emailProvider: (await loadEmailConfig())?.provider ?? null,
       uploads: uploadProvider(),
     },
   };
@@ -211,6 +255,21 @@ export const adminSettingsRouter = defineRoutes("/admin/settings", "Admin: Staff
     handler: async ({ req, body }) => {
       const current = await getSettings(SETTINGS_DEFAULTS);
       const next = { ...current, ...body };
+      if (
+        body["payments.card.enabled"] &&
+        !current["payments.card.enabled"] &&
+        !getPaymentProvider()
+      ) {
+        throw new AppError(
+          ErrorCode.VALIDATION_ERROR,
+          "Card payments need Stripe keys on the server first",
+          {
+            fieldErrors: {
+              "payments.card.enabled": ["Card payments need Stripe keys on the server first"],
+            },
+          },
+        );
+      }
       if (!next["payments.card.enabled"] && !next["payments.cod.enabled"]) {
         throw new AppError(ErrorCode.VALIDATION_ERROR, "Keep at least one payment method on", {
           fieldErrors: { "payments.cod.enabled": ["Keep at least one payment method on"] },
@@ -243,6 +302,99 @@ export const adminSettingsRouter = defineRoutes("/admin/settings", "Admin: Staff
         );
       }
       return ok(await settingsResponse());
+    },
+  }),
+  route({
+    method: "get",
+    path: "/email",
+    summary: "How emails are sent (passwords and API keys are never returned)",
+    access: "SUPER_ADMIN",
+    handler: async () => ok(await emailSettingsResponse()),
+  }),
+  route({
+    method: "put",
+    path: "/email",
+    summary: "Set up email: SMTP (e.g. Gmail) or Resend, or turn it off",
+    description:
+      "Until this is set up, the store sends no email at all. Leave `password` / `apiKey` out to keep the saved one. Secrets are stored encrypted.",
+    access: "SUPER_ADMIN",
+    body: emailSettingsSchema,
+    handler: async ({ req, body }) => {
+      const current = await readEmailSettings();
+      const values: Record<string, Prisma.InputJsonValue> = { "email.provider": body.provider };
+      if (body.provider === "smtp") {
+        if (!body.password && decryptSecret(current["email.smtp.password"]) === null) {
+          throw new AppError(ErrorCode.VALIDATION_ERROR, "Enter the SMTP password", {
+            fieldErrors: { password: ["Enter the SMTP password"] },
+          });
+        }
+        Object.assign(values, {
+          "email.from": body.from,
+          "email.smtp.host": body.host,
+          "email.smtp.port": body.port,
+          "email.smtp.secure": body.secure,
+          "email.smtp.user": body.user,
+          ...(body.password ? { "email.smtp.password": encryptSecret(body.password) } : {}),
+        });
+      } else if (body.provider === "resend") {
+        if (!body.apiKey && decryptSecret(current["email.resend.apiKey"]) === null) {
+          throw new AppError(ErrorCode.VALIDATION_ERROR, "Enter the Resend API key", {
+            fieldErrors: { apiKey: ["Enter the Resend API key"] },
+          });
+        }
+        Object.assign(values, {
+          "email.from": body.from,
+          ...(body.apiKey ? { "email.resend.apiKey": encryptSecret(body.apiKey) } : {}),
+        });
+      }
+      await prisma.$transaction(
+        Object.entries(values).map(([key, value]) =>
+          prisma.setting.upsert({
+            where: { key },
+            create: { key, value },
+            update: { value },
+          }),
+        ),
+      );
+      clearEmailConfigCache();
+      await audit(req, "settings.email", "Setting", "email", {
+        provider: body.provider,
+        ...(body.provider === "smtp"
+          ? { host: body.host, port: body.port, user: body.user, passwordChanged: !!body.password }
+          : body.provider === "resend"
+            ? { apiKeyChanged: !!body.apiKey }
+            : {}),
+      });
+      return ok(await emailSettingsResponse());
+    },
+  }),
+  route({
+    method: "post",
+    path: "/email/test",
+    summary: "Send a test email with the saved settings",
+    access: "SUPER_ADMIN",
+    rateLimit: "forms",
+    body: testEmailSchema,
+    handler: async ({ body }) => {
+      const config = toEmailConfig(await readEmailSettings());
+      if (!config) throw AppError.conflict("Save your email settings first");
+      try {
+        await sendWith(config, {
+          to: body.to,
+          subject: "Test email from your store",
+          text: "Email is working. Order confirmations and other emails will now be sent.",
+          html: "<p>Email is working. Order confirmations and other emails will now be sent.</p>",
+        });
+      } catch (err) {
+        const reason = err instanceof Error ? err.message.slice(0, 300) : "unknown error";
+        throw new AppError(
+          ErrorCode.SERVICE_UNAVAILABLE,
+          `The test email could not be sent: ${reason}`,
+          undefined,
+          502,
+        );
+      }
+      return ok({ sent: true });
     },
   }),
 ]);
