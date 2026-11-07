@@ -1,4 +1,6 @@
 import type { HomeContentDTO } from "@hoodie/types";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { CartDrawer } from "@/components/cart/cart-drawer";
@@ -11,7 +13,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
-  title: { default: `${siteConfig.name}: Premium Hoodies`, template: `%s | ${siteConfig.name}` },
+  title: {
+    default: `${siteConfig.name}: Streetwear Hoodies in Pakistan`,
+    template: `%s | ${siteConfig.name}`,
+  },
   description: siteConfig.description,
   openGraph: {
     type: "website",
@@ -46,6 +51,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <Footer />
           <CartDrawer />
         </Providers>
+        {/* Cookie-free page-view analytics and Core Web Vitals (only active on Vercel). */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

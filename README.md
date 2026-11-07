@@ -1,10 +1,16 @@
-# Hoodie Store
+# Urban Store
 
-A full-stack e-commerce store for hoodies: a customer **storefront**, an **admin dashboard**, and a **REST API**, in one TypeScript monorepo.
+**Urban Store** sells everyday streetwear hoodies across Pakistan. This one TypeScript monorepo holds a customer **storefront**, an **admin dashboard** and a **REST API**.
 
-See **[PLAN.md](./PLAN.md)** for the full project plan and roadmap.
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)**: going live on Vercel with a free Neon Postgres database, step by step.
+- **[PLAN.md](./PLAN.md)**: the full project plan and roadmap.
 
-> **Status: Phase 5 (engagement) complete.** Customers can browse with typo-tolerant search, buy (Cash on Delivery, or card in demo mode until Stripe keys are added), review what they bought, save a wishlist, get back-in-stock and cart reminder emails, and request returns. Staff run everything from the admin panel. Next up is Phase 6 (polish, QA and launch).
+> **Status: all six phases complete, ready to launch.**
+>
+> - **Shopping:** customers browse a real catalogue (Rs 2,699–5,499) with typo-tolerant search and order by Cash on Delivery.
+> - **After buying:** they track and cancel orders, review what they bought, keep a wishlist and request returns.
+> - **Admin:** staff run everything from the admin panel. Email is set up there too, and nothing is sent until it is.
+> - **Images:** stored in the database, so no Cloudinary account is needed.
 
 ---
 
@@ -70,14 +76,14 @@ Sign in to the admin panel at http://localhost:3001 with the Super Admin account
 
 ### What the seed loads
 
-- 4 categories, 3 collections
-- 8 hoodies (7 active, 1 draft) with **90 size × colour variants**, including sold-out and low-stock variants to exercise those UI states
+- 5 categories (pullover, zip-up, oversized, custom, women's), 3 collections
+- 9 hoodies (8 active, 1 draft) priced like Pakistani streetwear brands, with real photos (Unsplash, free for commercial use) per colour and **114 size × colour variants**, including sold-out and low-stock variants to exercise those UI states
 - 3 shipping zones (Lahore, major cities, rest of Pakistan) with COD fees
-- 3 coupons (`WELCOME10`, `FREESHIP`, `WINTER500`), 2 homepage banners
-- Policy pages, FAQs, and store settings
-- 6 approved demo reviews on 3 products (from three demo reviewer accounts without passwords)
+- 3 coupons (`WELCOME10`, `FREESHIP`, `WINTER500`), 3 homepage banners
+- Shipping, returns, privacy and terms pages, FAQs, and store settings (Cash on Delivery only)
+- 7 approved demo reviews on 4 products (from three demo reviewer accounts without passwords)
 
-The seed is **idempotent**, so you can run it again at any time. In `NODE_ENV=production` it only seeds essentials (admin, settings, shipping, pages, FAQ), and it refuses the example admin password.
+The seed is **idempotent**, so you can run it again at any time. In `NODE_ENV=production` it seeds the essentials (admin, settings, shipping, pages, FAQ), plus the catalogue and banners the first time only (each size starts with 20 in stock). It never adds demo customers, reviews or coupons, and it refuses the example admin password.
 
 ## Scripts
 
@@ -139,7 +145,7 @@ pnpm build      # all apps must be built
 pnpm e2e        # starts the API, storefront and admin if they aren't running, then runs Playwright
 ```
 
-There are 35 tests on desktop, mobile (Pixel 7) and the admin panel. They cover browsing, filters, sorting, search (including suggestions with a typo), the size guide, the cart, sold-out and low-stock states, registering with a guest cart, addresses, signing out and in, the mobile menu and filters, checkout (Cash on Delivery, demo card payments with a decline then success, coupons, saved addresses, tracking and cancelling), wishlist, recently viewed, reviews, returns, unsubscribe links, and the admin (sign-in and access rules, fulfilling and refunding orders, creating a product with variants and stock, coupons, the dashboard, publishing a review, and a return from approval to refund). They run against the database in `apps/api/.env`, create uniquely named `@test.local` users, and sign in to the admin with `SEED_ADMIN_PASSWORD` (or `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`). If the API is already running, start it with `RATE_LIMIT_ENABLED=false`, because the tests sign in more than five times a minute.
+There are 51 tests on desktop, mobile (Pixel 7) and the admin panel. They cover browsing, filters, sorting, search (including suggestions with a typo), the size guide, the cart, sold-out and low-stock states, registering with a guest cart, addresses, signing out and in, the mobile menu and filters, checkout (Cash on Delivery, demo card payments with a decline then success, coupons, saved addresses, tracking and cancelling), wishlist, recently viewed, reviews, returns, unsubscribe links, and the admin (sign-in and access rules, fulfilling and refunding orders, creating a product with variants and stock, coupons, the dashboard, publishing a review, and a return from approval to refund), plus automated **accessibility checks** (axe, WCAG 2.1 AA) on 14 storefront pages and 10 admin pages. Card tests switch demo card payments on for the run and off again afterwards. They run against the database in `apps/api/.env`, create uniquely named `@test.local` users, and sign in to the admin with `SEED_ADMIN_PASSWORD` (or `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`). If the API is already running, start it with `RATE_LIMIT_ENABLED=false`, because the tests sign in more than five times a minute.
 
 ## Admin panel
 
@@ -170,29 +176,31 @@ http://localhost:3001 (staff accounts only; customer accounts are refused).
 
 **New orders** show as a badge and a pop-up within 30 seconds (the admin polls `GET /admin/notifications`), alongside counts of returns and reviews waiting.
 
-**Image uploads** go straight to Cloudinary when its keys are set. Without them (development), images are saved to `apps/api/uploads` and served by the API. In production, use Cloudinary or set `LOCAL_UPLOADS=true` with a persistent disk.
+**Image uploads** need no account. The admin resizes each photo in the browser (longest side 1,600 px, WebP), and the API stores it in Postgres and serves it from `/api/v1/media/…` with year-long caching. If Cloudinary keys are set, uploads go straight to Cloudinary instead.
+
+**Email** is set up in **Store settings → Email**: SMTP (Gmail with an app password, Outlook, Zoho, your host) or Resend. Passwords and keys are stored encrypted, and you can send a test email from there. **Until email is set up, nothing is sent at all.** Orders still work: the confirmation page tells customers to bookmark their order link, and staff invitations show a link to pass on by hand.
 
 ## Background jobs and emails
 
 With `REDIS_URL` set, the API runs a **BullMQ** worker. Emails are queued and retried with backoff (about two hours of attempts), and these jobs run on a schedule:
 
-| Job                  | When                  | What it does                                                                                                         |
-| -------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Expire unpaid orders | Every minute          | Releases stock held by card orders not paid within 15 minutes                                                        |
-| Cart reminders       | Every 15 minutes      | Emails signed-in customers who left items in their cart: after 1 hour, then after 1 day. Any cart change restarts it |
-| Daily summary        | 08:00 store time      | Yesterday's sales and what needs attention, to managers and Super Admins (switch off in Store settings)              |
-| Back-in-stock        | When stock goes up    | Emails everyone who asked to be told about that size and colour, once                                                |
-| Review request       | 7 days after delivery | "How's your hoodie?" with links to review what they haven't reviewed yet                                             |
+| Job                  | When               | What it does                                                                                                         |
+| -------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Expire unpaid orders | Every minute       | Releases stock held by card orders not paid within 15 minutes                                                        |
+| Cart reminders       | Every 15 minutes   | Emails signed-in customers who left items in their cart: after 1 hour, then after 1 day. Any cart change restarts it |
+| Daily summary        | 08:00 store time   | Yesterday's sales and what needs attention, to managers and Super Admins (switch off in Store settings)              |
+| Back-in-stock        | When stock goes up | Emails everyone who asked to be told about that size and colour, once                                                |
+| Review requests      | Every hour         | "How's your hoodie?" a week after delivery, with links to review what they haven't reviewed yet                      |
 
 Every marketing email (newsletter welcome, cart reminders) has a signed unsubscribe link; the storefront asks for a click before unsubscribing, because some email scanners open every link. Order emails are always sent.
 
-The worker runs inside the API by default. To run it separately, set `RUN_WORKER=false` on the API servers and start `node apps/api/dist/worker.js`. **Without Redis** the recurring jobs run on simple timers inside the API, emails are sent straight away, and the daily summary email is skipped.
+The worker runs inside the API by default. To run it separately, set `RUN_WORKER=false` on the API servers and start `node apps/api/dist/worker.js`. **Without Redis** the recurring jobs run on simple timers inside the API, emails are sent straight away, and the daily summary email is skipped. **On Vercel** there is no worker: Vercel Cron calls `GET /api/v1/cron/daily` (with `CRON_SECRET`) once a day to run all the scheduled jobs.
 
 ## Checkout and payments
 
 1. **Cart → checkout.** The checkout page asks the API for a live quote (`POST /checkout/quote`) whenever the city, delivery method or payment method changes. Shipping comes from the shipping zone for the city, with free standard delivery over the zone's threshold.
 2. **Place the order** (`POST /checkout`). In one database transaction every line is **sold** (Cash on Delivery) or **reserved** (card) with an atomic conditional update, so if any line is short the whole order rolls back. Orders get sequential numbers (`US-10001`…). Re-sending the same `idempotencyKey` returns the same order, so a double click can't create two.
-3. **Cash on Delivery** orders are confirmed immediately, and the customer gets a confirmation email.
+3. **Cash on Delivery** (the only method unless Stripe keys are added) orders are confirmed immediately, and the customer gets a confirmation email once email is set up.
 4. **Card** orders wait for payment for 15 minutes. Success turns the reservation into a sale and sends the confirmation email. A declined card can be retried. If the time runs out, a job releases the stock.
 5. **After the order:** the customer sees it at `/orders/US-…?token=…` (the link in the email) or in their account. They can track it at `/track-order`, cancel it before it's prepared, and download a PDF invoice. Staff move orders along in the admin panel (processing → shipped → delivered), which emails the customer.
 

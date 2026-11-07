@@ -19,6 +19,8 @@
     "@stripe/react-stripe-js": "^3.11.0",
     "@stripe/stripe-js": "^7.10.0",
     "@tanstack/react-query": "^5.106.1",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.1.0",
     "next": "15.5.29",
     "react": "^19.1.10",
     "react-dom": "^19.1.10",
@@ -28,6 +30,7 @@
     "zustand": "^5.1.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@hoodie/config": "workspace:*",
     "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4.3.4",

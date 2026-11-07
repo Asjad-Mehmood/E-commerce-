@@ -13,7 +13,7 @@ import { Topbar } from "./topbar";
 
 function Brand() {
   return (
-    <Link href="/" aria-label="Urban Store Admin home">
+    <Link href="/" title="Dashboard">
       <Logo label="Admin" markClassName="size-7" />
     </Link>
   );

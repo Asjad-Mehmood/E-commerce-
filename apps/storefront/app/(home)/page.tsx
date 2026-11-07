@@ -5,6 +5,7 @@ import { RecentlyViewed } from "@/components/product/recently-viewed";
 import Link from "next/link";
 import { RefreshIcon, ShieldIcon, TruckIcon } from "@/components/icons";
 import { ProductGrid } from "@/components/product/product-card";
+import { siteConfig } from "@/lib/config";
 import { getData, getDataSafe, getList } from "@/lib/server-api";
 
 const perks = [
@@ -54,8 +55,40 @@ export default async function HomePage() {
   ]);
   const hero = home?.banners[0];
 
+  // Lets search engines show the store name, logo and a search box.
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      name: siteConfig.name,
+      url: siteConfig.url,
+      logo: `${siteConfig.url}/icon.svg`,
+      description: siteConfig.description,
+      areaServed: "PK",
+      currenciesAccepted: "PKR",
+      paymentAccepted: "Cash",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: siteConfig.name,
+      url: siteConfig.url,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${siteConfig.url}/search?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ];
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+        }}
+      />
       <section className="bg-ink text-white">
         <Container className="grid items-center gap-10 py-14 md:grid-cols-2 md:py-20">
           <div>
@@ -119,6 +152,8 @@ export default async function HomePage() {
                         alt=""
                         fill
                         sizes="(min-width: 1024px) 20vw, 50vw"
+                        // On phones the first tiles are the largest thing on screen.
+                        priority={i < 2}
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />

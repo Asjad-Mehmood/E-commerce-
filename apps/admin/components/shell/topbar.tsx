@@ -16,7 +16,8 @@ function Popover({
   button,
   children,
 }: {
-  label: string;
+  /** Accessible name; leave out when the button's own text names it. */
+  label?: string;
   button: ReactNode;
   children: (close: () => void) => ReactNode;
 }) {
@@ -158,7 +159,7 @@ export function Topbar({
       <div className="flex-1 sm:hidden" />
 
       <Popover
-        label={total ? `Notifications: ${total}` : "Notifications"}
+        label={total ? `Notifications: ${total > 99 ? "99+" : total}` : "Notifications"}
         button={
           <>
             <BellIcon />
@@ -192,10 +193,13 @@ export function Topbar({
       </Popover>
 
       <Popover
-        label="Account menu"
         button={
           <>
-            <span className="bg-ink flex size-8 items-center justify-center rounded-full text-sm font-semibold uppercase text-white">
+            <span className="sr-only">Account menu: </span>
+            <span
+              aria-hidden
+              className="bg-ink flex size-8 items-center justify-center rounded-full text-sm font-semibold uppercase text-white"
+            >
               {user.name.slice(0, 1)}
             </span>
             <span className="hidden text-left text-sm leading-tight md:block">

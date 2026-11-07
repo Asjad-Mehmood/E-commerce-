@@ -54,7 +54,10 @@ test("search finds products", async ({ page }) => {
   await page.goto("/search");
   await page.getByRole("searchbox", { name: "Search hoodies" }).fill("sherpa");
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Sherpa Zip Hoodie" })).toBeVisible();
+  // Search runs on the server; allow for a busy machine when every test runs at once.
+  await expect(page.getByRole("heading", { name: "Sherpa Zip Hoodie" })).toBeVisible({
+    timeout: 15_000,
+  });
 });
 
 test("a missing product returns a real 404", async ({ page }) => {

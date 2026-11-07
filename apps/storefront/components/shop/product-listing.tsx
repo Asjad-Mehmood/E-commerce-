@@ -77,6 +77,7 @@ export async function ProductListing({
               </div>
 
               <ResultsArea>
+                <h2 className="sr-only">Products</h2>
                 {products.data.length > 0 ? (
                   <ProductGrid products={products.data} priorityCount={4} />
                 ) : (
