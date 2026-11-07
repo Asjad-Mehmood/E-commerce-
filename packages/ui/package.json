@@ -1,0 +1,33 @@
+{
+  "name": "@hoodie/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./src/styles/theme.css"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.1"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@hoodie/config": "workspace:*",
+    "@types/react": "^19.1.10",
+    "eslint": "^9.39.5",
+    "react": "^19.1.10",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

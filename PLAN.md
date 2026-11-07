@@ -30,9 +30,11 @@ A detailed plan for building a hoodie-selling website with a **customer storefro
 ## 1. Project Overview
 
 ### 1.1 Goal
+
 An online store that sells hoodies (and later other apparel). Customers can browse, filter, pick size and color, add to cart, check out, pay online or by Cash on Delivery, and track their orders. Admins manage products, stock, orders, customers, discounts and content, and can see sales analytics.
 
 ### 1.2 Core Objectives
+
 - A fast, mobile-first storefront with good SEO.
 - Hoodie variants: **size × color**, each with its own stock and SKU.
 - Secure checkout with several payment methods.
@@ -40,40 +42,41 @@ An online store that sells hoodies (and later other apparel). Customers can brow
 - A scalable, maintainable codebase (TypeScript everywhere, one monorepo).
 
 ### 1.3 Success Metrics
-| Metric | Target |
-|---|---|
-| Lighthouse performance (mobile) | ≥ 90 |
-| Time to Interactive | < 3 s on 4G |
-| Checkout conversion | ≥ 2.5% |
-| API p95 latency | < 300 ms |
-| Uptime | 99.9% |
+
+| Metric                          | Target      |
+| ------------------------------- | ----------- |
+| Lighthouse performance (mobile) | ≥ 90        |
+| Time to Interactive             | < 3 s on 4G |
+| Checkout conversion             | ≥ 2.5%      |
+| API p95 latency                 | < 300 ms    |
+| Uptime                          | 99.9%       |
 
 ---
 
 ## 2. Tech Stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| Language | **TypeScript** | One language, shared types across apps |
-| Storefront | **Next.js 15 (App Router)** + React | SSR/SSG for SEO, image optimization |
-| Admin panel | **Next.js** (separate app) or **React + Vite** | Kept apart from the storefront for security and bundle size |
-| UI | **Tailwind CSS** + **shadcn/ui** | Fast, consistent design |
-| State / data | **TanStack Query** (server state), **Zustand** (cart/UI state) | Simple and well-tested |
-| Forms & validation | **React Hook Form** + **Zod** | Zod schemas shared with the backend |
-| Backend | **Node.js + Express** (or **NestJS** for more structure) | REST API |
-| ORM | **Prisma** | Type-safe queries, migrations |
-| Database | **PostgreSQL** | Relational data: orders, variants, inventory |
-| Cache / queues | **Redis** + **BullMQ** | Sessions, rate limiting, background jobs (emails) |
-| Auth | **JWT** (access + refresh tokens in httpOnly cookies), Google OAuth | Secure, stateless |
-| Payments | **Stripe** (cards), **Cash on Delivery**, optional local gateways (JazzCash / EasyPaisa / PayFast) | Covers international and local customers |
-| Images | **Cloudinary** or **AWS S3 + CloudFront** | Upload, resize, CDN |
-| Email | **Resend** / **SendGrid** + **React Email** templates | Transactional emails |
-| Search | PostgreSQL full-text search (later **Meilisearch**) | Start simple |
-| Monorepo | **Turborepo** + **pnpm workspaces** | Shared packages, cached builds |
-| Testing | **Vitest**, **Supertest**, **Playwright** | Unit, API and E2E tests |
-| CI/CD | **GitHub Actions** | Lint, test and deploy on push |
-| Hosting | Vercel (frontends), Railway / Render / AWS (API), Neon / Supabase (Postgres), Upstash (Redis) | Managed, low-ops |
-| Monitoring | **Sentry**, **UptimeRobot**, structured logs (Pino) | Error and uptime tracking |
+| Layer              | Choice                                                                                             | Why                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Language           | **TypeScript**                                                                                     | One language, shared types across apps                      |
+| Storefront         | **Next.js 15 (App Router)** + React                                                                | SSR/SSG for SEO, image optimization                         |
+| Admin panel        | **Next.js** (separate app) or **React + Vite**                                                     | Kept apart from the storefront for security and bundle size |
+| UI                 | **Tailwind CSS** + **shadcn/ui**                                                                   | Fast, consistent design                                     |
+| State / data       | **TanStack Query** (server state), **Zustand** (cart/UI state)                                     | Simple and well-tested                                      |
+| Forms & validation | **React Hook Form** + **Zod**                                                                      | Zod schemas shared with the backend                         |
+| Backend            | **Node.js + Express** (or **NestJS** for more structure)                                           | REST API                                                    |
+| ORM                | **Prisma**                                                                                         | Type-safe queries, migrations                               |
+| Database           | **PostgreSQL**                                                                                     | Relational data: orders, variants, inventory                |
+| Cache / queues     | **Redis** + **BullMQ**                                                                             | Sessions, rate limiting, background jobs (emails)           |
+| Auth               | **JWT** (access + refresh tokens in httpOnly cookies), Google OAuth                                | Secure, stateless                                           |
+| Payments           | **Stripe** (cards), **Cash on Delivery**, optional local gateways (JazzCash / EasyPaisa / PayFast) | Covers international and local customers                    |
+| Images             | **Cloudinary** or **AWS S3 + CloudFront**                                                          | Upload, resize, CDN                                         |
+| Email              | **Resend** / **SendGrid** + **React Email** templates                                              | Transactional emails                                        |
+| Search             | PostgreSQL full-text search (later **Meilisearch**)                                                | Start simple                                                |
+| Monorepo           | **Turborepo** + **pnpm workspaces**                                                                | Shared packages, cached builds                              |
+| Testing            | **Vitest**, **Supertest**, **Playwright**                                                          | Unit, API and E2E tests                                     |
+| CI/CD              | **GitHub Actions**                                                                                 | Lint, test and deploy on push                               |
+| Hosting            | Vercel (frontends), Railway / Render / AWS (API), Neon / Supabase (Postgres), Upstash (Redis)      | Managed, low-ops                                            |
+| Monitoring         | **Sentry**, **UptimeRobot**, structured logs (Pino)                                                | Error and uptime tracking                                   |
 
 ---
 
@@ -104,6 +107,7 @@ An online store that sells hoodies (and later other apparel). Customers can brow
 ```
 
 **Principles**
+
 - The API is the single source of truth. Both frontends talk only to the API.
 - Stripe webhooks confirm payments on the server. Never trust the client.
 - Slow work (emails, image processing, reports) runs in background jobs.
@@ -162,13 +166,13 @@ E-commerce-/
 
 ## 5. User Roles & Permissions
 
-| Role | Access |
-|---|---|
-| **Guest** | Browse, search, cart, guest checkout |
-| **Customer** | Everything a guest can do, plus account, order history, wishlist, reviews, saved addresses |
-| **Support** (admin) | View orders and customers, update order status, reply to messages |
-| **Manager** (admin) | Products, inventory, categories, coupons, content, plus everything Support can do |
-| **Super Admin** | Everything, including staff accounts, settings, payment config and analytics |
+| Role                | Access                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| **Guest**           | Browse, search, cart, guest checkout                                                       |
+| **Customer**        | Everything a guest can do, plus account, order history, wishlist, reviews, saved addresses |
+| **Support** (admin) | View orders and customers, update order status, reply to messages                          |
+| **Manager** (admin) | Products, inventory, categories, coupons, content, plus everything Support can do          |
+| **Super Admin**     | Everything, including staff accounts, settings, payment config and analytics               |
 
 RBAC is enforced in API middleware (`requireRole('MANAGER')`) **and** reflected in the admin UI, which hides menu items a role can't use.
 
@@ -178,51 +182,56 @@ RBAC is enforced in API middleware (`requireRole('MANAGER')`) **and** reflected 
 
 ### 6.1 Pages & Routes
 
-| Route | Page | Key contents |
-|---|---|---|
-| `/` | Home | Hero banner, featured hoodies, new arrivals, best sellers, collections, testimonials, newsletter |
-| `/shop` | All products | Grid, filters, sort, pagination / infinite scroll |
-| `/collections/[slug]` | Collection | e.g. Oversized, Zip-Up, Pullover, Graphic, Winter |
-| `/products/[slug]` | Product detail | Gallery, size and color picker, stock status, size guide, description, fabric and care info, reviews, related products |
-| `/search?q=` | Search results | Full-text search with filters |
-| `/cart` | Cart | Line items, quantity update, coupon, subtotal, shipping estimate |
-| `/checkout` | Checkout | Steps: Contact → Shipping → Delivery method → Payment → Review |
-| `/checkout/success` | Order confirmation | Order number, summary, next steps |
-| `/login`, `/register` | Auth | Email/password, Google login |
-| `/forgot-password`, `/reset-password` | Password reset | Token-based |
-| `/account` | Dashboard | Overview |
-| `/account/orders` | Order history | List with status |
-| `/account/orders/[id]` | Order detail | Items, tracking timeline, invoice download, return request |
-| `/account/addresses` | Address book | CRUD, set default |
-| `/account/wishlist` | Wishlist | Saved items, move to cart |
-| `/account/profile` | Profile | Name, email, password, phone |
-| `/track-order` | Guest order tracking | Order # + email |
-| `/size-guide` | Size chart | Measurements per fit (regular / oversized) |
-| `/about`, `/contact`, `/faq` | Content pages | Contact form goes to the admin inbox |
-| `/policies/shipping`, `/returns`, `/privacy`, `/terms` | Legal | CMS-managed |
-| `404`, `500` | Error pages | Friendly, with links back |
+| Route                                                  | Page                 | Key contents                                                                                                           |
+| ------------------------------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `/`                                                    | Home                 | Hero banner, featured hoodies, new arrivals, best sellers, collections, testimonials, newsletter                       |
+| `/shop`                                                | All products         | Grid, filters, sort, pagination / infinite scroll                                                                      |
+| `/categories/[slug]`                                   | Category             | e.g. Pullover, Zip-Up, Oversized, Graphic                                                                              |
+| `/collections/[slug]`                                  | Collection           | e.g. New Arrivals, Best Sellers, Winter Essentials                                                                     |
+| `/products/[slug]`                                     | Product detail       | Gallery, size and color picker, stock status, size guide, description, fabric and care info, reviews, related products |
+| `/search?q=`                                           | Search results       | Full-text search with filters                                                                                          |
+| `/cart`                                                | Cart                 | Line items, quantity update, coupon, subtotal, shipping estimate                                                       |
+| `/checkout`                                            | Checkout             | Steps: Contact → Shipping → Delivery method → Payment → Review                                                         |
+| `/checkout/success`                                    | Order confirmation   | Order number, summary, next steps                                                                                      |
+| `/login`, `/register`                                  | Auth                 | Email/password, Google login                                                                                           |
+| `/forgot-password`, `/reset-password`                  | Password reset       | Token-based                                                                                                            |
+| `/account`                                             | Dashboard            | Overview                                                                                                               |
+| `/account/orders`                                      | Order history        | List with status                                                                                                       |
+| `/account/orders/[id]`                                 | Order detail         | Items, tracking timeline, invoice download, return request                                                             |
+| `/account/addresses`                                   | Address book         | CRUD, set default                                                                                                      |
+| `/account/wishlist`                                    | Wishlist             | Saved items, move to cart                                                                                              |
+| `/account/profile`                                     | Profile              | Name, email, password, phone                                                                                           |
+| `/track-order`                                         | Guest order tracking | Order # + email                                                                                                        |
+| `/size-guide`                                          | Size chart           | Measurements per fit (regular / oversized)                                                                             |
+| `/about`, `/contact`, `/faq`                           | Content pages        | Contact form goes to the admin inbox                                                                                   |
+| `/policies/shipping`, `/returns`, `/privacy`, `/terms` | Legal                | CMS-managed                                                                                                            |
+| `404`, `500`                                           | Error pages          | Friendly, with links back                                                                                              |
 
 ### 6.2 Hoodie-Specific Features
+
 - **Variant picker**: color swatches change the gallery images. Size buttons are disabled when that size is out of stock.
 - **Size guide modal** with a measurement table (chest, length, sleeve) and a "find my size" helper (height/weight → suggested size).
 - **Fit info**: Regular / Oversized / Slim, with a model's height and the size they wear.
 - **Fabric details**: GSM (e.g. 320 GSM fleece), cotton/poly blend, care instructions.
 - **Low stock badge** ("Only 3 left in M").
 - **Notify me when back in stock** for sold-out variants.
-- *(Optional, Phase 5)* **Custom hoodie designer**: upload a print or add text, with a live preview.
+- _(Optional, Phase 5)_ **Custom hoodie designer**: upload a print or add text, with a live preview.
 
 ### 6.3 Filtering & Sorting
+
 - Filters: category, size, color, price range, fit, fabric, in stock only, on sale.
 - Sorting: newest, price low→high, price high→low, best selling, top rated.
 - Filters are stored in URL query params so they can be shared and are crawlable.
 
 ### 6.4 Cart Behavior
-- Guests: the cart lives in local storage (Zustand persist) and is mirrored to the server with a `cartToken` cookie.
+
+- Guests: the cart lives on the server, identified by an httpOnly `cart_token` cookie (no local storage needed).
 - On login, the guest cart **merges** into the user's server cart.
 - The server re-checks stock and price on every cart change and at checkout.
 - Slide-out mini cart drawer with an "Added to cart" confirmation.
 
 ### 6.5 Checkout
+
 - Guest checkout allowed, with an optional "create account" at the end.
 - Address form with validation (phone format, postal code).
 - Delivery options: Standard / Express, with prices from admin shipping rules.
@@ -231,6 +240,7 @@ RBAC is enforced in API middleware (`requireRole('MANAGER')`) **and** reflected 
 - Order summary with tax and shipping breakdown.
 
 ### 6.6 UI / UX Requirements
+
 - Mobile-first responsive layout (breakpoints: 640 / 768 / 1024 / 1280).
 - Sticky header with mega-menu, search and cart icon with item count.
 - Skeleton loaders, optimistic UI for cart and wishlist.
@@ -239,6 +249,7 @@ RBAC is enforced in API middleware (`requireRole('MANAGER')`) **and** reflected 
 - Accessible components (keyboard navigation, ARIA labels, contrast).
 
 ### 6.7 Storefront Components (shared `packages/ui`)
+
 `Header`, `Footer`, `MegaMenu`, `SearchBar`, `ProductCard`, `ProductGrid`, `ProductGallery`, `VariantSelector`, `SizeGuideModal`, `PriceTag`, `RatingStars`, `ReviewList`, `ReviewForm`, `CartDrawer`, `CartItem`, `CouponInput`, `CheckoutStepper`, `AddressForm`, `OrderTimeline`, `Breadcrumbs`, `Pagination`, `FilterSidebar`, `Badge`, `Button`, `Input`, `Modal`, `Toast`, `Skeleton`.
 
 ---
@@ -246,32 +257,34 @@ RBAC is enforced in API middleware (`requireRole('MANAGER')`) **and** reflected 
 ## 7. Admin Side (Dashboard)
 
 ### 7.1 Layout
+
 Sidebar navigation, top bar (search, notifications, profile), breadcrumbs, and data tables with search, filter, sort, pagination, bulk actions and CSV export.
 
 ### 7.2 Modules & Pages
 
-| Module | Route | Features |
-|---|---|---|
-| **Dashboard** | `/` | KPIs (revenue today/week/month, orders, AOV, new customers, conversion), sales chart, top products, low-stock alerts, recent orders |
-| **Products** | `/products` | List, search, filter by status/category, bulk publish/unpublish/delete |
-| | `/products/new`, `/products/[id]` | Title, slug, description (rich text), category, tags, fit, fabric, price, compare-at price, SEO fields, image upload (drag & drop, reorder), **variant matrix generator** (pick sizes and colors to generate SKUs), per-variant price/stock/SKU/barcode, per-color images, status (draft/active/archived) |
-| **Categories & Collections** | `/categories`, `/collections` | CRUD, nesting, banner image, manual or rule-based collections |
-| **Inventory** | `/inventory` | Stock per variant, quick edit, stock adjustment with reason (restock, damage, correction), adjustment history, low-stock threshold |
-| **Orders** | `/orders` | List with status filter, date range, payment method, search by #/email/phone |
-| | `/orders/[id]` | Customer and address, items, payment status, timeline, change status, add tracking number, internal notes, print invoice / packing slip, refund (full/partial via Stripe), cancel |
-| **Returns** | `/returns` | Approve/reject return requests, restock on receipt, issue refund |
-| **Customers** | `/customers` | List, profile, order history, lifetime value, block/unblock, notes |
-| **Reviews** | `/reviews` | Moderate (approve/hide), reply |
-| **Discounts** | `/coupons` | Percentage / fixed / free shipping, min order, usage limit (total and per user), start/end dates, applies to products/categories |
-| **Shipping** | `/settings/shipping` | Zones (cities/countries), flat or weight-based rates, free-shipping threshold, COD fee |
-| **Content (CMS)** | `/content` | Homepage banners/sliders, announcement bar, FAQ, policy pages |
-| **Messages** | `/messages` | Contact-form submissions and status |
-| **Reports** | `/reports` | Sales by day/product/category, best sellers, inventory valuation, CSV export |
-| **Staff** | `/staff` | Invite admin users, assign roles, deactivate |
-| **Settings** | `/settings` | Store info, currency, tax rate, payment methods toggle, email templates, SEO defaults |
-| **Activity Log** | `/audit-log` | Who changed what and when |
+| Module                       | Route                             | Features                                                                                                                                                                                                                                                                                                  |
+| ---------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**                | `/`                               | KPIs (revenue today/week/month, orders, AOV, new customers, conversion), sales chart, top products, low-stock alerts, recent orders                                                                                                                                                                       |
+| **Products**                 | `/products`                       | List, search, filter by status/category, bulk publish/unpublish/delete                                                                                                                                                                                                                                    |
+|                              | `/products/new`, `/products/[id]` | Title, slug, description (rich text), category, tags, fit, fabric, price, compare-at price, SEO fields, image upload (drag & drop, reorder), **variant matrix generator** (pick sizes and colors to generate SKUs), per-variant price/stock/SKU/barcode, per-color images, status (draft/active/archived) |
+| **Categories & Collections** | `/categories`, `/collections`     | CRUD, nesting, banner image, manual or rule-based collections                                                                                                                                                                                                                                             |
+| **Inventory**                | `/inventory`                      | Stock per variant, quick edit, stock adjustment with reason (restock, damage, correction), adjustment history, low-stock threshold                                                                                                                                                                        |
+| **Orders**                   | `/orders`                         | List with status filter, date range, payment method, search by #/email/phone                                                                                                                                                                                                                              |
+|                              | `/orders/[id]`                    | Customer and address, items, payment status, timeline, change status, add tracking number, internal notes, print invoice / packing slip, refund (full/partial via Stripe), cancel                                                                                                                         |
+| **Returns**                  | `/returns`                        | Approve/reject return requests, restock on receipt, issue refund                                                                                                                                                                                                                                          |
+| **Customers**                | `/customers`                      | List, profile, order history, lifetime value, block/unblock, notes                                                                                                                                                                                                                                        |
+| **Reviews**                  | `/reviews`                        | Moderate (approve/hide), reply                                                                                                                                                                                                                                                                            |
+| **Discounts**                | `/coupons`                        | Percentage / fixed / free shipping, min order, usage limit (total and per user), start/end dates, applies to products/categories                                                                                                                                                                          |
+| **Shipping**                 | `/settings/shipping`              | Zones (cities/countries), flat or weight-based rates, free-shipping threshold, COD fee                                                                                                                                                                                                                    |
+| **Content (CMS)**            | `/content`                        | Homepage banners/sliders, announcement bar, FAQ, policy pages                                                                                                                                                                                                                                             |
+| **Messages**                 | `/messages`                       | Contact-form submissions and status                                                                                                                                                                                                                                                                       |
+| **Reports**                  | `/reports`                        | Sales by day/product/category, best sellers, inventory valuation, CSV export                                                                                                                                                                                                                              |
+| **Staff**                    | `/staff`                          | Invite admin users, assign roles, deactivate                                                                                                                                                                                                                                                              |
+| **Settings**                 | `/settings`                       | Store info, currency, tax rate, payment methods toggle, email templates, SEO defaults                                                                                                                                                                                                                     |
+| **Activity Log**             | `/audit-log`                      | Who changed what and when                                                                                                                                                                                                                                                                                 |
 
 ### 7.3 Admin Notifications
+
 - Real-time new-order notification (polling or Server-Sent Events).
 - Daily email digest: sales summary and low stock.
 
@@ -280,30 +293,32 @@ Sidebar navigation, top bar (search, notifications, profile), breadcrumbs, and d
 ## 8. Backend
 
 ### 8.1 Modules
+
 Each module has `routes → controller → service → Prisma`. Business logic goes in services.
 
-| Module | Responsibility |
-|---|---|
-| `auth` | Register, login, logout, refresh token, email verification, forgot/reset password, Google OAuth |
-| `users` | Profile, addresses, admin user management |
-| `products` | Product CRUD, variants, images, slug generation, publish status |
-| `categories` / `collections` | Taxonomy |
-| `inventory` | Stock levels, reservations, adjustments, low-stock alerts |
-| `cart` | Guest and user carts, merge, price/stock validation |
-| `wishlist` | Add/remove |
-| `checkout` | Compute totals (subtotal, discount, shipping, tax), create order and payment intent |
-| `orders` | Order lifecycle, status history, invoices |
-| `payments` | Stripe intents, webhooks, refunds, COD handling |
-| `shipping` | Zones, rates, tracking numbers |
-| `coupons` | Validation and application rules |
-| `reviews` | Create (verified buyers only), moderation |
-| `cms` | Banners, pages, FAQ |
-| `notifications` | Email queue, back-in-stock alerts |
-| `analytics` | Dashboard aggregates, reports |
-| `uploads` | Signed upload URLs for Cloudinary/S3 |
-| `audit` | Log admin actions |
+| Module                       | Responsibility                                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| `auth`                       | Register, login, logout, refresh token, email verification, forgot/reset password, Google OAuth |
+| `users`                      | Profile, addresses, admin user management                                                       |
+| `products`                   | Product CRUD, variants, images, slug generation, publish status                                 |
+| `categories` / `collections` | Taxonomy                                                                                        |
+| `inventory`                  | Stock levels, reservations, adjustments, low-stock alerts                                       |
+| `cart`                       | Guest and user carts, merge, price/stock validation                                             |
+| `wishlist`                   | Add/remove                                                                                      |
+| `checkout`                   | Compute totals (subtotal, discount, shipping, tax), create order and payment intent             |
+| `orders`                     | Order lifecycle, status history, invoices                                                       |
+| `payments`                   | Stripe intents, webhooks, refunds, COD handling                                                 |
+| `shipping`                   | Zones, rates, tracking numbers                                                                  |
+| `coupons`                    | Validation and application rules                                                                |
+| `reviews`                    | Create (verified buyers only), moderation                                                       |
+| `cms`                        | Banners, pages, FAQ                                                                             |
+| `notifications`              | Email queue, back-in-stock alerts                                                               |
+| `analytics`                  | Dashboard aggregates, reports                                                                   |
+| `uploads`                    | Signed upload URLs for Cloudinary/S3                                                            |
+| `audit`                      | Log admin actions                                                                               |
 
 ### 8.2 Middleware
+
 - `authenticate`: verify JWT from the httpOnly cookie.
 - `authorize(...roles)`: RBAC.
 - `validate(schema)`: Zod validation of body/query/params.
@@ -313,6 +328,7 @@ Each module has `routes → controller → service → Prisma`. Business logic g
 - `helmet`, `cors` (allow only the storefront and admin origins), `compression`.
 
 ### 8.3 Background Jobs (BullMQ)
+
 - Send emails (welcome, verify email, order confirmation, shipped, delivered, password reset, abandoned cart).
 - Release expired stock reservations.
 - Back-in-stock notifications.
@@ -320,12 +336,14 @@ Each module has `routes → controller → service → Prisma`. Business logic g
 - Nightly analytics aggregation.
 
 ### 8.4 Order Status Lifecycle
+
 ```
 PENDING_PAYMENT ──▶ PAID / CONFIRMED (COD) ──▶ PROCESSING ──▶ SHIPPED ──▶ DELIVERED
        │                     │                      │
        ▼                     ▼                      ▼
    CANCELLED             CANCELLED              RETURN_REQUESTED ──▶ RETURNED ──▶ REFUNDED
 ```
+
 Every status change is written to `OrderStatusHistory` and can trigger an email.
 
 ---
@@ -333,6 +351,7 @@ Every status change is written to `OrderStatusHistory` and can trigger an email.
 ## 9. Database Design
 
 ### 9.1 Entity Relationship Overview
+
 ```
 User 1─* Address
 User 1─* Order 1─* OrderItem *─1 ProductVariant
@@ -649,95 +668,102 @@ model Setting     { key String @id value Json }
 Base URL: `/api/v1`. All responses are JSON. Admin routes are prefixed with `/admin` and need an admin role.
 
 ### 10.1 Auth
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/auth/register` | Create account, send verification email |
-| POST | `/auth/login` | Set access and refresh cookies |
-| POST | `/auth/logout` | Revoke refresh token |
-| POST | `/auth/refresh` | Rotate tokens |
-| GET | `/auth/me` | Current user |
-| POST | `/auth/verify-email` | Verify with token |
-| POST | `/auth/forgot-password` | Send reset email |
-| POST | `/auth/reset-password` | Reset with token |
-| GET | `/auth/google` / `/auth/google/callback` | OAuth |
+
+| Method | Endpoint                                 | Description                             |
+| ------ | ---------------------------------------- | --------------------------------------- |
+| POST   | `/auth/register`                         | Create account, send verification email |
+| POST   | `/auth/login`                            | Set access and refresh cookies          |
+| POST   | `/auth/logout`                           | Revoke refresh token                    |
+| POST   | `/auth/refresh`                          | Rotate tokens                           |
+| GET    | `/auth/me`                               | Current user                            |
+| POST   | `/auth/verify-email`                     | Verify with token                       |
+| POST   | `/auth/forgot-password`                  | Send reset email                        |
+| POST   | `/auth/reset-password`                   | Reset with token                        |
+| GET    | `/auth/google` / `/auth/google/callback` | OAuth                                   |
 
 ### 10.2 Public Catalog
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/products` | List with `?category=&size=&color=&minPrice=&maxPrice=&fit=&sort=&page=&limit=` |
-| GET | `/products/:slug` | Detail with variants, images, rating |
-| GET | `/products/:id/related` | Related products |
-| GET | `/products/:id/reviews` | Approved reviews (paginated) |
-| GET | `/categories` | Category tree |
-| GET | `/collections` / `/collections/:slug` | Collections |
-| GET | `/search?q=` | Search |
-| GET | `/filters` | Available sizes, colors, price range (for the filter UI) |
-| GET | `/cms/home` | Banners, featured sections |
-| GET | `/cms/pages/:slug` | Policy/content page |
-| GET | `/cms/faq` | FAQ |
-| POST | `/contact` | Contact form |
-| POST | `/stock-alerts` | Back-in-stock subscribe |
-| POST | `/newsletter` | Subscribe |
+
+| Method | Endpoint                              | Description                                                                     |
+| ------ | ------------------------------------- | ------------------------------------------------------------------------------- |
+| GET    | `/products`                           | List with `?category=&size=&color=&minPrice=&maxPrice=&fit=&sort=&page=&limit=` |
+| GET    | `/products/:slug`                     | Detail with variants, images, rating                                            |
+| GET    | `/products/:id/related`               | Related products                                                                |
+| GET    | `/products/:id/reviews`               | Approved reviews (paginated)                                                    |
+| GET    | `/categories`                         | Category tree                                                                   |
+| GET    | `/collections` / `/collections/:slug` | Collections                                                                     |
+| GET    | `/search?q=`                          | Search                                                                          |
+| GET    | `/filters`                            | Available sizes, colors, price range (for the filter UI)                        |
+| GET    | `/cms/home`                           | Banners, featured sections                                                      |
+| GET    | `/cms/pages/:slug`                    | Policy/content page                                                             |
+| GET    | `/cms/faq`                            | FAQ                                                                             |
+| POST   | `/contact`                            | Contact form                                                                    |
+| POST   | `/stock-alerts`                       | Back-in-stock subscribe                                                         |
+| POST   | `/newsletter`                         | Subscribe                                                                       |
 
 ### 10.3 Cart & Checkout
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/cart` | Get cart (user or guest token) |
-| POST | `/cart/items` | Add `{ variantId, quantity }` |
-| PATCH | `/cart/items/:id` | Update quantity |
-| DELETE | `/cart/items/:id` | Remove |
-| POST | `/cart/merge` | Merge guest cart after login |
-| POST | `/cart/coupon` / DELETE `/cart/coupon` | Apply/remove coupon |
-| POST | `/checkout/quote` | Totals for address + shipping method |
-| POST | `/checkout` | Create order. For Stripe, returns `clientSecret` |
-| POST | `/payments/stripe/webhook` | Stripe webhook (raw body, signature verified) |
+
+| Method | Endpoint                               | Description                                               |
+| ------ | -------------------------------------- | --------------------------------------------------------- |
+| GET    | `/cart`                                | Get cart (user or guest token)                            |
+| POST   | `/cart/items`                          | Add `{ variantId, quantity }`                             |
+| PATCH  | `/cart/items/:id`                      | Update quantity                                           |
+| DELETE | `/cart/items/:id`                      | Remove                                                    |
+| DELETE | `/cart`                                | Empty the cart (guest cart merges automatically on login) |
+| POST   | `/cart/coupon` / DELETE `/cart/coupon` | Apply/remove coupon                                       |
+| POST   | `/checkout/quote`                      | Totals for address + shipping method                      |
+| POST   | `/checkout`                            | Create order. For Stripe, returns `clientSecret`          |
+| POST   | `/payments/stripe/webhook`             | Stripe webhook (raw body, signature verified)             |
 
 ### 10.4 Customer Account (auth required)
-| Method | Endpoint | Description |
-|---|---|---|
-| PATCH | `/me` | Update profile |
-| PATCH | `/me/password` | Change password |
-| GET/POST/PATCH/DELETE | `/me/addresses[/:id]` | Address book |
-| GET | `/me/orders` / `/me/orders/:id` | Order history |
-| POST | `/me/orders/:id/cancel` | Cancel (if not yet shipped) |
-| POST | `/me/orders/:id/return` | Request return |
-| GET | `/me/orders/:id/invoice` | PDF invoice |
-| GET/POST/DELETE | `/me/wishlist[/:productId]` | Wishlist |
-| POST | `/products/:id/reviews` | Write review (verified purchase) |
-| GET | `/orders/track?number=&email=` | Guest tracking (public) |
+
+| Method                | Endpoint                        | Description                               |
+| --------------------- | ------------------------------- | ----------------------------------------- |
+| PATCH                 | `/me`                           | Update profile                            |
+| PATCH                 | `/auth/password`                | Change password (signs out other devices) |
+| GET/POST/PATCH/DELETE | `/me/addresses[/:id]`           | Address book                              |
+| GET                   | `/me/orders` / `/me/orders/:id` | Order history                             |
+| POST                  | `/me/orders/:id/cancel`         | Cancel (if not yet shipped)               |
+| POST                  | `/me/orders/:id/return`         | Request return                            |
+| GET                   | `/me/orders/:id/invoice`        | PDF invoice                               |
+| GET/POST/DELETE       | `/me/wishlist[/:productId]`     | Wishlist                                  |
+| POST                  | `/products/:id/reviews`         | Write review (verified purchase)          |
+| GET                   | `/orders/track?number=&email=`  | Guest tracking (public)                   |
 
 ### 10.5 Admin
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/admin/dashboard` | KPIs and charts data |
-| GET/POST | `/admin/products` | List / create |
-| GET/PATCH/DELETE | `/admin/products/:id` | Read / update / archive |
-| POST | `/admin/products/:id/variants/generate` | Generate size × color matrix |
-| PATCH | `/admin/variants/:id` | Update price/stock/SKU |
-| POST | `/admin/products/bulk` | Bulk publish/archive/delete |
-| POST | `/admin/uploads/sign` | Signed upload URL |
-| CRUD | `/admin/categories`, `/admin/collections` | Taxonomy |
-| GET | `/admin/inventory` | Stock list, low-stock filter |
-| POST | `/admin/inventory/:variantId/adjust` | Adjust with reason |
-| GET | `/admin/orders` | List with filters |
-| GET/PATCH | `/admin/orders/:id` | Detail, update status/tracking/notes |
-| POST | `/admin/orders/:id/refund` | Full/partial refund |
-| GET | `/admin/orders/:id/packing-slip` | PDF |
-| GET | `/admin/orders/export` | CSV |
-| GET/PATCH | `/admin/returns[/:id]` | Return management |
-| GET | `/admin/customers` / `/admin/customers/:id` | Customer list/detail |
-| PATCH | `/admin/customers/:id/block` | Block/unblock |
-| GET/PATCH/DELETE | `/admin/reviews[/:id]` | Moderation |
-| CRUD | `/admin/coupons` | Discounts |
-| CRUD | `/admin/shipping-zones` | Shipping |
-| CRUD | `/admin/banners`, `/admin/pages`, `/admin/faq` | CMS |
-| GET/PATCH | `/admin/messages[/:id]` | Contact inbox |
-| GET | `/admin/reports/sales?from=&to=&groupBy=` | Reports |
-| CRUD | `/admin/staff` | Staff users and roles (Super Admin) |
-| GET/PATCH | `/admin/settings` | Store settings |
-| GET | `/admin/audit-log` | Activity log |
+
+| Method            | Endpoint                                              | Description                                          |
+| ----------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| GET               | `/admin/dashboard`                                    | KPIs and charts data                                 |
+| GET/POST          | `/admin/products`                                     | List / create                                        |
+| GET/PATCH/DELETE  | `/admin/products/:id`                                 | Read / update / archive                              |
+| POST              | `/admin/products/:id/variants/generate`               | Generate size × color matrix                         |
+| POST/PATCH/DELETE | `/admin/products/:id/variants`, `/admin/variants/:id` | Add / update (price, SKU, active) / delete a variant |
+| POST/GET          | `/admin/variants/:id/adjust-stock`, `/stock-history`  | Adjust stock with a reason; history                  |
+| POST              | `/admin/products/bulk`                                | Bulk publish/archive/delete                          |
+| POST              | `/admin/uploads/sign`                                 | Signed upload URL                                    |
+| CRUD              | `/admin/categories`, `/admin/collections`             | Taxonomy                                             |
+| GET               | `/admin/inventory`                                    | Stock list, low-stock filter                         |
+| POST              | `/admin/inventory/:variantId/adjust`                  | Adjust with reason                                   |
+| GET               | `/admin/orders`                                       | List with filters                                    |
+| GET/PATCH         | `/admin/orders/:id`                                   | Detail, update status/tracking/notes                 |
+| POST              | `/admin/orders/:id/refund`                            | Full/partial refund                                  |
+| GET               | `/admin/orders/:id/packing-slip`                      | PDF                                                  |
+| GET               | `/admin/orders/export`                                | CSV                                                  |
+| GET/PATCH         | `/admin/returns[/:id]`                                | Return management                                    |
+| GET               | `/admin/customers` / `/admin/customers/:id`           | Customer list/detail                                 |
+| PATCH             | `/admin/customers/:id/block`                          | Block/unblock                                        |
+| GET/PATCH/DELETE  | `/admin/reviews[/:id]`                                | Moderation                                           |
+| CRUD              | `/admin/coupons`                                      | Discounts                                            |
+| CRUD              | `/admin/shipping-zones`                               | Shipping                                             |
+| CRUD              | `/admin/banners`, `/admin/pages`, `/admin/faq`        | CMS                                                  |
+| GET/PATCH         | `/admin/messages[/:id]`                               | Contact inbox                                        |
+| GET               | `/admin/reports/sales?from=&to=&groupBy=`             | Reports                                              |
+| CRUD              | `/admin/staff`                                        | Staff users and roles (Super Admin)                  |
+| GET/PATCH         | `/admin/settings`                                     | Store settings                                       |
+| GET               | `/admin/audit-log`                                    | Activity log                                         |
 
 ### 10.6 Standard Response Shapes
+
 ```json
 // list
 { "data": [ ... ], "meta": { "page": 1, "limit": 20, "total": 134, "totalPages": 7 } }
@@ -751,6 +777,7 @@ Base URL: `/api/v1`. All responses are JSON. Admin routes are prefixed with `/ad
 ## 11. Key Business Flows
 
 ### 11.1 Checkout with Stripe
+
 1. The client sends `POST /checkout` with the cart, address, shipping method and `paymentMethod=STRIPE`.
 2. The server, inside a **DB transaction**:
    - re-validates prices, stock and coupon;
@@ -763,16 +790,20 @@ Base URL: `/api/v1`. All responses are JSON. Admin routes are prefixed with `/ad
 5. `payment_intent.payment_failed` or reservation expiry: release the reserved stock and mark the order `CANCELLED`.
 
 ### 11.2 Checkout with Cash on Delivery
+
 Same validation. The order is created as `CONFIRMED`, stock is decremented right away, the COD fee is added, and the confirmation email is sent. An admin can phone-verify before marking it `PROCESSING`.
 
 ### 11.3 Preventing Overselling
+
 - Use `UPDATE ... SET reserved = reserved + :q WHERE id = :id AND stock - reserved >= :q` (an atomic conditional update). If 0 rows change, the item is out of stock.
 - A scheduled job releases expired reservations every minute.
 
 ### 11.4 Returns & Refunds
+
 Customer requests a return within N days of delivery → admin approves → item received → admin marks it returned (optionally restocking it) → refund via Stripe API, or manually for COD → email.
 
 ### 11.5 Back-in-Stock
+
 When an admin raises stock on a variant from 0 to more than 0, a job emails everyone in `StockAlert` for that variant.
 
 ---
@@ -799,6 +830,7 @@ When an admin raises stock on a variant from 0 to more than 0, a job emails ever
 ## 13. Performance, SEO & Accessibility
 
 **Performance**
+
 - SSG/ISR for product and collection pages (revalidate on product update via an on-demand revalidation webhook).
 - `next/image` with responsive sizes, AVIF/WebP, lazy loading.
 - Redis cache for hot endpoints (home, categories, filters).
@@ -806,29 +838,32 @@ When an admin raises stock on a variant from 0 to more than 0, a job emails ever
 - Code splitting and minimal client JS on the storefront.
 
 **SEO**
+
 - Per-page `<title>`, meta description, Open Graph and Twitter cards.
 - `Product`, `BreadcrumbList`, `Organization` and `Review` JSON-LD structured data.
 - `sitemap.xml` and `robots.txt` generated automatically.
 - Clean slugs (`/products/classic-oversized-black-hoodie`), canonical URLs.
 
 **Accessibility (WCAG 2.1 AA)**
+
 - Semantic HTML, alt text on images, focus states, keyboard-navigable menus and modals, color contrast ≥ 4.5:1, labelled form fields with error messages.
 
 **Analytics**
+
 - Google Analytics 4 / Plausible, Meta Pixel (optional), e-commerce events: `view_item`, `add_to_cart`, `begin_checkout`, `purchase`.
 
 ---
 
 ## 14. Testing Strategy
 
-| Type | Tool | Coverage |
-|---|---|---|
-| Unit | Vitest | Services: pricing, coupon rules, shipping calc, stock reservation |
-| Integration / API | Vitest + Supertest + test Postgres (Docker) | Every endpoint: happy path, validation, auth/RBAC |
-| Component | React Testing Library | VariantSelector, Cart, Checkout forms |
-| E2E | Playwright | Browse → add to cart → checkout (Stripe test card + COD), login, admin creates product, admin ships order |
-| Load | k6 | Product listing and checkout under load |
-| Manual QA | Checklist | Mobile devices, browsers, payment edge cases |
+| Type              | Tool                                        | Coverage                                                                                                  |
+| ----------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Unit              | Vitest                                      | Services: pricing, coupon rules, shipping calc, stock reservation                                         |
+| Integration / API | Vitest + Supertest + test Postgres (Docker) | Every endpoint: happy path, validation, auth/RBAC                                                         |
+| Component         | React Testing Library                       | VariantSelector, Cart, Checkout forms                                                                     |
+| E2E               | Playwright                                  | Browse → add to cart → checkout (Stripe test card + COD), login, admin creates product, admin ships order |
+| Load              | k6                                          | Product listing and checkout under load                                                                   |
+| Manual QA         | Checklist                                   | Mobile devices, browsers, payment edge cases                                                              |
 
 Target ≥ 80% coverage on backend services. CI blocks merges when tests fail.
 
@@ -837,14 +872,15 @@ Target ≥ 80% coverage on backend services. CI blocks merges when tests fail.
 ## 15. DevOps & Deployment
 
 ### 15.1 Environments
+
 `local` (Docker Compose: Postgres + Redis) → `staging` (auto-deploy from `develop`) → `production` (deploy from `main` after approval).
 
 ### 15.2 Environment Variables (`.env.example`)
+
 ```
 DATABASE_URL=
 REDIS_URL=
 JWT_ACCESS_SECRET=
-JWT_REFRESH_SECRET=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
@@ -861,11 +897,13 @@ SENTRY_DSN=
 ```
 
 ### 15.3 CI/CD (GitHub Actions)
+
 1. On PR: install → lint → typecheck → unit and integration tests → build.
 2. On merge to `develop`: deploy to staging, then run Playwright E2E against staging.
 3. On merge to `main`: run `prisma migrate deploy`, then deploy the API, storefront and admin.
 
 ### 15.4 Operations
+
 - Daily automated DB backups with point-in-time recovery.
 - Sentry for frontend and backend errors. Uptime monitoring on `/health`.
 - Structured logs with request IDs.
@@ -877,7 +915,10 @@ SENTRY_DSN=
 
 Estimated for 1–2 developers. Adjust to your team size.
 
-### Phase 0: Setup & Design (Week 1)
+### Phase 0: Setup & Design (Week 1) ✅ code complete
+
+> Done: monorepo, shared packages, API skeleton with health check and error handling, full Prisma schema + initial migration, idempotent seed (8 hoodies / 90 variants), storefront and admin shells, lint/format/commit hooks, CI. Still open: brand and Figma designs.
+
 - Finalize requirements, brand (logo, colors, fonts), and sitemap.
 - Wireframes and UI design in Figma: home, PLP, PDP, cart, checkout, account, admin dashboard, product form, order detail.
 - Set up the monorepo (Turborepo + pnpm), ESLint, Prettier, Husky, Docker Compose, CI skeleton.
@@ -885,7 +926,18 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** running empty apps, DB seeded, CI green.
 
-### Phase 1: Backend Core (Weeks 2–3)
+### Phase 1: Backend Core (Weeks 2–3) ✅ complete
+
+> Done: auth (register, login, refresh rotation with theft detection, logout, email verification, password reset/change), profile and address book, RBAC, Redis-backed rate limiting, CSRF origin check, public catalog with filters/search/sort, admin products/variants/stock/categories/collections with audit log, Cloudinary upload signing, guest + user cart with automatic merge on login, OpenAPI docs at `/api/docs`, 120 API tests on an isolated test database.
+>
+> Changes from the original plan:
+>
+> - Change password is `PATCH /auth/password` (not `/me/password`): the refresh cookie that identifies "this device" is only sent to `/auth` paths.
+> - The guest cart merges automatically on login/register, so there is no separate `/cart/merge` endpoint.
+> - Stock adjustments are `POST /admin/variants/:id/adjust-stock` (plus `GET …/stock-history`). Stock cannot be set directly, so every change is recorded.
+> - Refresh tokens are opaque random strings stored hashed, so `JWT_REFRESH_SECRET` is not needed.
+> - Google OAuth moves to Phase 5 (needs OAuth credentials). API docs live at `/api/docs`.
+
 - Auth (register/login/refresh/logout, email verification, reset password).
 - RBAC middleware, error handling, validation, logging, rate limiting.
 - Products, variants, images, categories, collections (CRUD and public endpoints with filters).
@@ -895,7 +947,18 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** documented API (Swagger/OpenAPI at `/docs`).
 
-### Phase 2: Storefront MVP (Weeks 3–5)
+### Phase 2: Storefront MVP (Weeks 3–5) ✅ complete
+
+> Done: header with mega-menu, mobile menu, announcement bar and footer; home page (CMS hero, categories, new arrivals, best sellers); shop, category, collection and search pages with URL-based filters (size, colour, fit, price, in stock), sort and pagination; product page with colour-aware gallery, size/colour picker, low-stock and sold-out states, back-in-stock sign-up, size guide with size finder, JSON-LD; cart drawer and cart page; sign in, register, forgot/reset password, email verification; account overview, profile, password and address book; FAQ, size guide, policies, about and contact pages; sitemap and robots; 18 Playwright end-to-end tests (desktop + mobile) in CI.
+>
+> Changes from the original plan:
+>
+> - The guest cart lives on the server (cart cookie), not in local storage, so it survives devices and merges on login. Zustand only holds UI state (drawers).
+> - Categories live at `/categories/[slug]`; `/collections/[slug]` is for collections.
+> - Public content endpoints were added to the API: `GET /cms/home`, `/cms/pages/:slug`, `/cms/faq`, `POST /contact`, `/newsletter`, `/stock-alerts`, and `GET /auth/session` (returns null for guests instead of a 401).
+> - The access-token cookie now lasts as long as the session, so an expired token is reported (401 TOKEN_EXPIRED) and refreshed, instead of the shopper silently becoming a guest.
+> - Wishlist, order history and order tracking links stay hidden until those features exist (Phases 3 and 5). The checkout button shows "coming soon" until Phase 3.
+
 - Layout: header, footer, mega-menu, mobile nav.
 - Home page, shop/collection page with filters and sorting, product detail with variant picker and size guide.
 - Cart drawer and cart page.
@@ -904,7 +967,19 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** customers can browse and build a cart.
 
-### Phase 3: Checkout, Payments & Orders (Weeks 5–7)
+### Phase 3: Checkout, Payments & Orders (Weeks 5–7) ✅ complete
+
+> Done: shipping zones and delivery options, coupons on the cart, live checkout quote, checkout for guests and signed-in customers (saved addresses), Cash on Delivery, card payments through a provider layer (real Stripe with webhooks, or a built-in demo mode using Stripe test cards), stock reservation with 15-minute expiry, double-submit protection, sequential order numbers (HD-10001…), order confirmation/shipped/delivered/cancelled emails, order page with timeline, customer cancellation, invoice PDF, account order history, guest order tracking, admin order status endpoint (processing → shipped → delivered).
+>
+> Changes from the original plan:
+>
+> - **Demo payment mode**: without Stripe keys, card payments use a built-in stand-in for Stripe test mode (only Stripe's public test card numbers, no money moves). Setting `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET` switches to real Stripe with no code changes. Demo mode is disabled in production unless explicitly allowed.
+> - Unpaid reservations are released by an in-process scheduled job (every minute) rather than BullMQ; every stock change is an atomic conditional update, so it is safe on multiple servers. Emails are sent inline for now. BullMQ arrives with the heavier jobs in Phase 5.
+> - Email templates live in the API (`src/lib/email-layout.ts`, `*.emails.ts`) instead of a separate React Email package.
+> - Guest order links use an HMAC token derived from the order id (no stored secret), so a retried checkout returns the same link.
+> - Percentage coupons round down to whole rupees.
+> - Paid card orders are cancelled through a refund, which comes with the admin orders screen in Phase 4.
+
 - Shipping zones and rates, coupons, checkout quote.
 - Checkout flow (guest and logged in), Stripe Payment Element, COD.
 - Webhooks, stock reservation, order creation, order status history.
@@ -913,7 +988,21 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** end-to-end purchase works in Stripe test mode.
 
-### Phase 4: Admin Dashboard (Weeks 7–9)
+### Phase 4: Admin Dashboard (Weeks 7–9) ✅ complete
+
+> Done: staff sign-in with role-based menu and page access; dashboard (net sales, orders, average order value, new customers vs the previous period, daily sales chart with a table view, top products, low stock, recent orders, payment mix); orders (filters, search, CSV export, fulfilment with courier and tracking, cancel, full and partial refunds through Stripe/demo or recorded for COD, notes, invoice and packing slip PDFs); customers (lifetime value, orders, addresses, notes, block); messages inbox with email replies; products (bulk actions, editor, image manager with upload, size × colour generator, per-variant settings); inventory with reasoned adjustments and history; categories and collections; coupons; shipping zones; content (announcement bar, scheduled banners, pages, FAQ); reports (sales by day/week/month, products, categories, inventory value, CSV); staff (email invitations, roles, deactivate, remove); store settings; activity log; new-order alerts by polling every 30 seconds.
+>
+> Changes from the original plan:
+>
+> - Returns and review moderation move to Phase 5, together with the customer-side returns and reviews they depend on.
+> - Product descriptions are plain text with paragraphs (no rich-text editor yet).
+> - Coupons apply to the whole cart; "applies to products/categories" is not built. Shipping rates are flat per zone (no weight-based rates).
+> - The dashboard shows no conversion rate: that needs visit analytics (Phase 6).
+> - New orders are announced by polling rather than Server-Sent Events, and the daily email digest is not built yet (Phase 5, with the background job queue).
+> - Images upload straight to Cloudinary when it is configured. Without it, they are stored on the API server (development default).
+> - Reports value inventory at selling prices, because cost prices are not recorded.
+> - SEO defaults stay in the storefront config rather than store settings.
+
 - Admin auth and layout, role-based menu.
 - Products management with variant matrix generator and image manager.
 - Inventory management and adjustments.
@@ -925,13 +1014,26 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** the store can be fully run from the admin panel.
 
-### Phase 5: Engagement Features (Weeks 9–10)
+### Phase 5: Engagement Features (Weeks 9–10) ✅ complete
+
+> Done: reviews and ratings from verified buyers with moderation and public replies, review-request email a week after delivery; wishlist; back-in-stock emails; newsletter welcome email, signed unsubscribe links, subscriber list and CSV export; abandoned-cart reminders (after 1 hour and 1 day); typo-tolerant search with ranking and search-as-you-type suggestions; "You may also like" based on products bought together; recently viewed; returns (customer request within the return window, approve / decline, receive with restock, refund through the payment provider or recorded for COD); BullMQ job queue with retrying emails and scheduled jobs; daily summary email for managers; Google sign-in.
+>
+> Changes from the original plan:
+>
+> - Reviews need a delivered order containing the product (from the reviewer's account, or placed with their verified email). Photo uploads on reviews are not built.
+> - Returns are refunds only; exchanges are handled by the customer noting the size they want and staff placing a new order.
+> - Cart reminders go to signed-in customers only, because guest carts have no email address until checkout.
+> - Newsletter campaigns are sent from an external email tool using the CSV export; the store only collects subscribers.
+> - Without Redis, the daily summary and review-request emails are skipped; everything else falls back to in-process timers.
+> - Custom hoodie designer (optional) is not built; it stays in Future Enhancements.
+
 - Reviews and ratings (verified purchases), wishlist.
 - Back-in-stock alerts, newsletter, abandoned cart emails.
 - Search improvements, related products, "recently viewed".
 - Returns and refunds flow.
 
 ### Phase 6: Polish, QA & Launch (Weeks 10–12)
+
 - SEO (meta, JSON-LD, sitemap), performance tuning, accessibility audit.
 - Full E2E test suite, load testing, security review (OWASP checklist).
 - Legal pages, cookie consent, analytics.
@@ -939,89 +1041,103 @@ Estimated for 1–2 developers. Adjust to your team size.
 - Switch Stripe to live mode, load real products, soft launch, then public launch.
 
 ### Timeline Summary
-| Phase | Weeks | Output |
-|---|---|---|
-| 0 Setup & Design | 1 | Repo, designs, schema |
-| 1 Backend Core | 2–3 | Auth, catalog, cart API |
-| 2 Storefront MVP | 3–5 | Browse and cart UI |
-| 3 Checkout & Orders | 5–7 | Payments, orders, emails |
-| 4 Admin Dashboard | 7–9 | Full store management |
-| 5 Engagement | 9–10 | Reviews, wishlist, alerts |
-| 6 QA & Launch | 10–12 | Production launch |
+
+| Phase               | Weeks | Output                    |
+| ------------------- | ----- | ------------------------- |
+| 0 Setup & Design    | 1     | Repo, designs, schema     |
+| 1 Backend Core      | 2–3   | Auth, catalog, cart API   |
+| 2 Storefront MVP    | 3–5   | Browse and cart UI        |
+| 3 Checkout & Orders | 5–7   | Payments, orders, emails  |
+| 4 Admin Dashboard   | 7–9   | Full store management     |
+| 5 Engagement        | 9–10  | Reviews, wishlist, alerts |
+| 6 QA & Launch       | 10–12 | Production launch         |
 
 ---
 
 ## 17. Task Checklist
 
-### Setup
-- [ ] Init Turborepo + pnpm workspaces
-- [ ] Create `apps/storefront`, `apps/admin`, `apps/api`
-- [ ] Create `packages/ui`, `packages/validation`, `packages/types`, `packages/config`, `packages/emails`
-- [ ] Docker Compose (Postgres, Redis)
-- [ ] ESLint, Prettier, Husky, lint-staged, commitlint
-- [ ] GitHub Actions CI
-- [ ] `.env.example`, README with setup steps
+### Setup (Phase 0 ✅ done)
+
+- [x] Init Turborepo + pnpm workspaces
+- [x] Create `apps/storefront`, `apps/admin`, `apps/api`
+- [x] Create `packages/ui`, `packages/validation`, `packages/types`, `packages/config`
+- [ ] Create `packages/emails` (moved to Phase 3, when transactional emails are built)
+- [x] Docker Compose (Postgres, Redis)
+- [x] ESLint, Prettier, Husky, lint-staged, commitlint
+- [x] GitHub Actions CI
+- [x] `.env.example`, README with setup steps
+- [ ] Brand identity and Figma designs (logo, palette, fonts, key screens), which need a designer
 
 ### Backend
-- [ ] Prisma schema, migrations, seed
-- [ ] Express app: helmet, cors, compression, pino, error handler
-- [ ] Auth module (JWT cookies, refresh rotation, email verify, reset, Google OAuth)
-- [ ] RBAC middleware
-- [ ] Products / variants / images / categories / collections
-- [ ] Filters and search endpoints
-- [ ] Upload signing (Cloudinary)
-- [ ] Cart and merge
-- [ ] Coupons
-- [ ] Shipping zones and quote
-- [ ] Checkout with stock reservation (transaction)
-- [ ] Stripe PaymentIntent and webhooks, refunds
-- [ ] COD flow
-- [ ] Orders and status history, invoice PDF
-- [ ] Reviews, wishlist
-- [ ] CMS (banners, pages, FAQ), contact, newsletter
-- [ ] BullMQ workers: emails, reservation expiry, stock alerts, abandoned cart
-- [ ] Admin endpoints: dashboard, reports, customers, staff, settings, audit log
-- [ ] OpenAPI docs
-- [ ] API tests
+
+- [x] Prisma schema, migrations, seed
+- [x] Express app: helmet, cors, compression, pino, error handler
+- [x] Auth module (JWT cookies, refresh rotation, email verify, reset)
+- [x] Google OAuth
+- [x] RBAC middleware
+- [x] Rate limiting (Redis) and CSRF origin check
+- [x] Profile and address book
+- [x] Products / variants / images / categories / collections
+- [x] Stock adjustments with history
+- [x] Filters and search endpoints
+- [x] Upload signing (Cloudinary)
+- [x] Cart and merge
+- [x] Coupons
+- [x] Shipping zones and quote
+- [x] Checkout with stock reservation (transaction)
+- [x] Stripe PaymentIntent and webhooks (+ demo mode), refunds
+- [x] COD flow
+- [x] Orders and status history, invoice PDF
+- [x] Reviews, wishlist, returns
+- [x] CMS (banners, pages, FAQ, announcement), contact inbox, newsletter sign-up
+- [x] BullMQ workers: emails, reservation expiry, stock alerts, abandoned cart, daily summary, review requests
+- [x] Admin endpoints: dashboard, reports, customers, staff, settings, audit log
+- [x] OpenAPI docs
+- [x] API tests (Phase 1 scope; extended each phase)
 
 ### Storefront
-- [ ] Design system and shared components
-- [ ] Header / footer / mega-menu / mobile nav
-- [ ] Home page
-- [ ] Shop and collection pages with filters/sort/pagination
-- [ ] Product detail page (gallery, variant picker, size guide, reviews)
-- [ ] Search
-- [ ] Cart drawer and cart page
-- [ ] Checkout (multi-step) with Stripe and COD
-- [ ] Order success page
-- [ ] Auth pages
-- [ ] Account: dashboard, orders, order detail, addresses, wishlist, profile
-- [ ] Guest order tracking
-- [ ] Content pages (about, contact, FAQ, policies, size guide)
-- [ ] SEO (metadata, JSON-LD, sitemap)
+
+- [x] Design system and shared components (Button, Input, Field, Dialog/Drawer, Badge, Card, Skeleton)
+- [x] Header / footer / mega-menu / mobile nav
+- [x] Home page
+- [x] Shop, category and collection pages with filters/sort/pagination
+- [x] Product detail page (gallery, variant picker, size guide, reviews)
+- [x] Search
+- [x] Cart drawer and cart page
+- [x] Checkout with Stripe (or demo cards) and COD
+- [x] Order success page
+- [x] Auth pages (sign in, register, forgot/reset password, verify email)
+- [x] Account: overview, profile, password, addresses
+- [x] Account: orders, order detail
+- [x] Account: wishlist
+- [x] Guest order tracking
+- [x] Content pages (about, contact, FAQ, policies, size guide)
+- [x] SEO (metadata, JSON-LD, sitemap, robots, real 404s)
 - [ ] Analytics events
 
-### Admin
-- [ ] Admin login and protected layout
-- [ ] Dashboard KPIs and charts
-- [ ] Products list and form (variant matrix, images)
-- [ ] Categories and collections
-- [ ] Inventory and adjustments
-- [ ] Orders list/detail, status, tracking, refunds, PDFs, CSV export
-- [ ] Returns
-- [ ] Customers
-- [ ] Reviews moderation
-- [ ] Coupons
-- [ ] Shipping settings
-- [ ] CMS
-- [ ] Messages inbox
-- [ ] Reports
-- [ ] Staff and roles
-- [ ] Store settings
-- [ ] Audit log
+### Admin (Phases 4–5 ✅)
+
+- [x] Admin login and protected layout
+- [x] Dashboard KPIs and charts
+- [x] Products list and form (variant matrix, images)
+- [x] Categories and collections
+- [x] Inventory and adjustments
+- [x] Orders list/detail, status, tracking, refunds, PDFs, CSV export
+- [x] Returns
+- [x] Customers
+- [x] Reviews moderation
+- [x] Coupons
+- [x] Shipping settings
+- [x] CMS
+- [x] Messages inbox
+- [x] Reports
+- [x] Staff and roles
+- [x] Store settings
+- [x] Audit log
 
 ### Launch
-- [ ] E2E tests (Playwright)
+
+- [x] E2E tests (Playwright): storefront, checkout and admin; extended each phase
 - [ ] Lighthouse and accessibility audit
 - [ ] Security review
 - [ ] Production deploy, domain, SSL
@@ -1032,6 +1148,7 @@ Estimated for 1–2 developers. Adjust to your team size.
 ---
 
 ## 18. Future Enhancements
+
 - Custom hoodie designer (upload artwork, text, live mockup preview).
 - Loyalty points and referral program.
 - Gift cards.

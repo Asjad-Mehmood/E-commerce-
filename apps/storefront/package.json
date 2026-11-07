@@ -1,0 +1,41 @@
+{
+  "name": "@hoodie/storefront",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@hoodie/types": "workspace:*",
+    "@hoodie/ui": "workspace:*",
+    "@hoodie/validation": "workspace:*",
+    "@hookform/resolvers": "^5.9.2",
+    "@stripe/react-stripe-js": "^3.11.0",
+    "@stripe/stripe-js": "^7.10.0",
+    "@tanstack/react-query": "^5.106.1",
+    "next": "15.5.29",
+    "react": "^19.1.10",
+    "react-dom": "^19.1.10",
+    "react-hook-form": "^7.91.0",
+    "sonner": "^2.0.8",
+    "zod": "^4.6.7",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@hoodie/config": "workspace:*",
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/postcss": "^4.3.4",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "eslint": "^9.39.5",
+    "tailwindcss": "^4.3.4",
+    "typescript": "^5.9.3"
+  }
+}
