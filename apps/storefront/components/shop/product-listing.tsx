@@ -69,7 +69,7 @@ export async function ProductListing({
                     activeCount={activeCount}
                     resultCount={total}
                   />
-                  <SortSelect value={filters.sort} />
+                  <SortSelect value={filters.sort} search={!!filters.q} />
                 </div>
               </div>
               <div className="mb-6">

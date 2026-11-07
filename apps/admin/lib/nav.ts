@@ -8,7 +8,7 @@ export interface NavItem {
   /** Roadmap phase that builds this module. Items after BUILT_PHASE render as "Soon". */
   phase: number;
   /** Key of the notification count shown next to the item. */
-  badge?: "toFulfil" | "newMessages" | "lowStock";
+  badge?: "toFulfil" | "newMessages" | "lowStock" | "pendingReturns" | "pendingReviews";
 }
 
 export interface NavSection {
@@ -19,7 +19,7 @@ export interface NavSection {
 const { SUPPORT, MANAGER, SUPER_ADMIN } = Role;
 
 /** Modules up to this roadmap phase are built. */
-export const BUILT_PHASE = 4;
+export const BUILT_PHASE = 5;
 
 /** Every admin module from PLAN.md §7.2, grouped for the sidebar. */
 export const adminNav: NavSection[] = [
@@ -34,7 +34,7 @@ export const adminNav: NavSection[] = [
     title: "Sales",
     items: [
       { label: "Orders", href: "/orders", minRole: SUPPORT, phase: 4, badge: "toFulfil" },
-      { label: "Returns", href: "/returns", minRole: SUPPORT, phase: 5 },
+      { label: "Returns", href: "/returns", minRole: SUPPORT, phase: 5, badge: "pendingReturns" },
       { label: "Customers", href: "/customers", minRole: SUPPORT, phase: 4 },
       { label: "Messages", href: "/messages", minRole: SUPPORT, phase: 4, badge: "newMessages" },
     ],
@@ -46,7 +46,7 @@ export const adminNav: NavSection[] = [
       { label: "Inventory", href: "/inventory", minRole: MANAGER, phase: 4, badge: "lowStock" },
       { label: "Categories", href: "/categories", minRole: MANAGER, phase: 4 },
       { label: "Collections", href: "/collections", minRole: MANAGER, phase: 4 },
-      { label: "Reviews", href: "/reviews", minRole: SUPPORT, phase: 5 },
+      { label: "Reviews", href: "/reviews", minRole: SUPPORT, phase: 5, badge: "pendingReviews" },
     ],
   },
   {
@@ -54,6 +54,7 @@ export const adminNav: NavSection[] = [
     items: [
       { label: "Coupons", href: "/coupons", minRole: MANAGER, phase: 4 },
       { label: "Content", href: "/content", minRole: MANAGER, phase: 4 },
+      { label: "Newsletter", href: "/newsletter", minRole: MANAGER, phase: 5 },
     ],
   },
   {

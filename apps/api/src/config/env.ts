@@ -63,7 +63,13 @@ const envSchema = z
     /** Minutes an unpaid card order holds its stock. */
     PAYMENT_RESERVATION_MINUTES: z.coerce.number().int().min(5).max(120).default(15),
 
+    // Google sign-in (optional). Both must be set to show "Continue with Google".
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+
     RATE_LIMIT_ENABLED: bool(true),
+    /** Run the background job worker inside the API process (set false when running src/worker.ts separately). */
+    RUN_WORKER: bool(true),
     API_DOCS_ENABLED: z.enum(["true", "false"]).optional(),
   })
   .transform((e) => ({

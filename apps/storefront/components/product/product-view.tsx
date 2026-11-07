@@ -14,6 +14,8 @@ import { NotifyMe } from "./notify-me";
 import { Price } from "./price";
 import { QuantityStepper } from "./quantity-stepper";
 import { SizeGuideDialog } from "./size-guide";
+import { Stars } from "./stars";
+import { WishlistButton } from "./wishlist-button";
 
 function Gallery({ images, title }: { images: ProductDetailDTO["images"]; title: string }) {
   const [active, setActive] = useState(0);
@@ -126,6 +128,18 @@ export function ProductView({ product }: { product: ProductDetailDTO }) {
           )}
         </div>
         <h1 className="mt-3 text-3xl font-bold tracking-tight">{product.title}</h1>
+        {product.reviewCount > 0 && (
+          <a
+            href="#reviews"
+            className="mt-2 inline-flex items-center gap-2 text-sm hover:underline"
+          >
+            <Stars rating={product.avgRating} size={14} />
+            <span className="text-muted">
+              {product.avgRating.toFixed(1)} · {product.reviewCount} review
+              {product.reviewCount === 1 ? "" : "s"}
+            </span>
+          </a>
+        )}
         <Price
           price={variant?.price ?? product.price}
           compareAtPrice={product.compareAtPrice}
@@ -225,11 +239,20 @@ export function ProductView({ product }: { product: ProductDetailDTO }) {
         {/* Purchase */}
         <div className="mt-8">
           {variant && soldOut ? (
-            <NotifyMe
-              key={variant.id}
-              variantId={variant.id}
-              label={`${product.title} (${variant.color}, ${variant.size})`}
-            />
+            <div className="space-y-3">
+              <NotifyMe
+                key={variant.id}
+                variantId={variant.id}
+                label={`${product.title} (${variant.color}, ${variant.size})`}
+              />
+              <WishlistButton
+                productId={product.id}
+                title={product.title}
+                variant="button"
+                withText
+                className="w-full"
+              />
+            </div>
           ) : (
             <div className="flex gap-3">
               <QuantityStepper
@@ -247,6 +270,7 @@ export function ProductView({ product }: { product: ProductDetailDTO }) {
               >
                 {product.inStock ? "Add to cart" : "Sold out"}
               </Button>
+              <WishlistButton productId={product.id} title={product.title} variant="button" />
             </div>
           )}
         </div>

@@ -17,6 +17,7 @@ import { prisma } from "../../lib/prisma";
 import { uniqueSlug } from "../../lib/slug";
 import { AppError } from "../../utils/app-error";
 import { available, effectivePrice } from "../catalog/catalog.mapper";
+import { afterStockIncrease } from "../engagement/stock-alerts";
 
 const ORDER_BY: Record<AdminProductListQuery["sort"], Prisma.ProductOrderByWithRelationInput> = {
   updated: { updatedAt: "desc" },
@@ -354,7 +355,7 @@ export async function deleteVariant(id: string) {
 export async function adjustStock(variantId: string, input: StockAdjustmentInput, adminId: string) {
   const current = await findVariant(variantId);
 
-  return prisma.$transaction(async (tx) => {
+  const variant = await prisma.$transaction(async (tx) => {
     // Single atomic statement: safe against concurrent checkouts and adjustments.
     const rows = await tx.$queryRaw<{ stock: number }[]>`
       UPDATE "ProductVariant"
@@ -373,9 +374,11 @@ export async function adjustStock(variantId: string, input: StockAdjustmentInput
     await tx.inventoryAdjustment.create({
       data: { variantId, change: input.change, reason: input.reason, note: input.note, adminId },
     });
-    const variant = await tx.productVariant.findUniqueOrThrow({ where: { id: variantId } });
-    return toAdminVariant(variant, current.product.basePrice);
+    const updated = await tx.productVariant.findUniqueOrThrow({ where: { id: variantId } });
+    return toAdminVariant(updated, current.product.basePrice);
   });
+  if (input.change > 0) await afterStockIncrease([variantId]);
+  return variant;
 }
 
 export async function stockHistory(variantId: string) {

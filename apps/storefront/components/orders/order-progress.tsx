@@ -2,16 +2,23 @@ import type { OrderEventDTO, OrderStatus } from "@hoodie/types";
 import { ORDER_STATUS_LABEL } from "@hoodie/types";
 import { cn } from "@hoodie/ui";
 
+/** Returns happen after delivery, so those orders have completed every step. */
+const AFTER_DELIVERY: OrderStatus[] = ["DELIVERED", "RETURN_REQUESTED", "RETURNED"];
+
 const STEPS: { label: string; reached: OrderStatus[] }[] = [
-  { label: "Confirmed", reached: ["CONFIRMED", "PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
-  { label: "Being prepared", reached: ["PROCESSING", "SHIPPED", "DELIVERED"] },
-  { label: "Shipped", reached: ["SHIPPED", "DELIVERED"] },
-  { label: "Delivered", reached: ["DELIVERED"] },
+  {
+    label: "Confirmed",
+    reached: ["CONFIRMED", "PAID", "PROCESSING", "SHIPPED", ...AFTER_DELIVERY],
+  },
+  { label: "Being prepared", reached: ["PROCESSING", "SHIPPED", ...AFTER_DELIVERY] },
+  { label: "Shipped", reached: ["SHIPPED", ...AFTER_DELIVERY] },
+  { label: "Delivered", reached: AFTER_DELIVERY },
 ];
 
 /** Four-step progress bar for normal orders. */
 export function OrderProgress({ status }: { status: OrderStatus }) {
-  if (status === "CANCELLED" || status === "PENDING_PAYMENT") return null;
+  // Refunded orders may never have shipped, so the steps would mislead.
+  if (status === "CANCELLED" || status === "PENDING_PAYMENT" || status === "REFUNDED") return null;
   return (
     <ol className="grid grid-cols-4 gap-2" aria-label="Order progress">
       {STEPS.map((step) => {

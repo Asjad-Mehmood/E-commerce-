@@ -25,18 +25,22 @@ const num = (v: string | string[] | undefined) => {
 /** Reads listing filters from the page URL. */
 export function parseFilters(sp: SearchParams): ListingFilters {
   const sort = first(sp.sort) as ProductSort | undefined;
+  const q = first(sp.q)?.trim() || undefined;
   return {
-    q: first(sp.q)?.trim() || undefined,
+    q,
     size: list(sp.size),
     color: list(sp.color),
     fit: list(sp.fit),
     min: num(sp.min),
     max: num(sp.max),
     inStock: first(sp.inStock) === "true",
-    sort: sort && PRODUCT_SORTS.includes(sort) ? sort : "newest",
+    sort: sort && PRODUCT_SORTS.includes(sort) ? sort : defaultSort(q),
     page: Math.max(1, Math.floor(num(sp.page) ?? 1)),
   };
 }
+
+/** Searches show the best matches first; other listings show the newest. */
+export const defaultSort = (q?: string): ProductSort => (q ? "relevance" : "newest");
 
 export const PAGE_SIZE = 12;
 
@@ -67,6 +71,7 @@ export const SORT_LABELS: Record<ProductSort, string> = {
   price_asc: "Price: low to high",
   price_desc: "Price: high to low",
   top_rated: "Top rated",
+  relevance: "Best match",
 };
 
 export function countActiveFilters(f: ListingFilters): number {

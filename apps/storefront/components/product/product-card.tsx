@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { FIT_LABEL } from "@/lib/size-guide";
 import { Price } from "./price";
+import { Stars } from "./stars";
+import { WishlistButton } from "./wishlist-button";
 
 export function ProductCard({
   product,
@@ -15,6 +17,7 @@ export function ProductCard({
   const { image, hoverImage } = product;
   return (
     <article className="group relative">
+      <WishlistButton productId={product.id} title={product.title} />
       <Link href={`/products/${product.slug}`} className="block">
         <div className="bg-surface relative aspect-[4/5] overflow-hidden rounded-xl">
           {image && (
@@ -52,6 +55,15 @@ export function ProductCard({
             {product.title}
           </h3>
           <p className="text-muted text-xs">{FIT_LABEL[product.fit]}</p>
+          {product.reviewCount > 0 && (
+            <p className="text-muted flex items-center gap-1.5 text-xs">
+              <Stars rating={product.avgRating} size={12} />
+              <span>
+                ({product.reviewCount}
+                <span className="sr-only"> reviews</span>)
+              </span>
+            </p>
+          )}
           <Price
             price={product.price}
             compareAtPrice={product.compareAtPrice}

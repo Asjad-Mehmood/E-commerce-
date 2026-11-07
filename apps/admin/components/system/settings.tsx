@@ -80,6 +80,8 @@ export function Settings() {
       "payments.card.enabled": Boolean(get("payments.card.enabled")),
       "payments.cod.enabled": Boolean(get("payments.cod.enabled")),
       "returns.windowDays": windowDays,
+      "reviews.autoApprove": Boolean(get("reviews.autoApprove")),
+      "notifications.dailyDigest": Boolean(get("notifications.dailyDigest")),
     });
   });
 
@@ -170,12 +172,25 @@ export function Settings() {
             />
           </Section>
 
+          <Section title="Reviews and emails">
+            <Switch
+              label="Publish reviews straight away"
+              hint="Off: new and edited reviews wait in Reviews until staff publish them. Only customers who received the product can review it."
+              {...register(FIELD("reviews.autoApprove"))}
+            />
+            <Switch
+              label="Daily summary email"
+              hint="At 08:00, managers and Super Admins get yesterday's sales and what needs attention. Needs Redis for the job scheduler."
+              {...register(FIELD("notifications.dailyDigest"))}
+            />
+          </Section>
+
           <Section title="Returns">
             <Field
               label="Return window"
               htmlFor="s-returns"
               error={err("returns.windowDays")}
-              hint="Days after delivery a customer can ask for a return (used by returns, coming in Phase 5)."
+              hint="Days after delivery a customer can ask for a return from their order page. 0 turns returns off."
             >
               <AffixInput
                 id="s-returns"

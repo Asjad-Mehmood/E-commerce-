@@ -25,6 +25,13 @@ describe("admin navigation RBAC", () => {
     expect(support).not.toContain("Staff");
   });
 
+  it("gives Support returns and review moderation, but not the newsletter list", () => {
+    const support = labels("SUPPORT");
+    expect(support).toEqual(expect.arrayContaining(["Returns", "Reviews"]));
+    expect(support).not.toContain("Newsletter");
+    expect(labels("MANAGER")).toContain("Newsletter");
+  });
+
   it("hides staff and store settings from Managers", () => {
     const manager = labels("MANAGER");
     expect(manager).toContain("Products");

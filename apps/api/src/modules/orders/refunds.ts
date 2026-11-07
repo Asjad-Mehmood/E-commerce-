@@ -6,6 +6,7 @@ import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
 import { getPaymentProvider } from "../payments";
 import { capturedPayment, findOrderByNumber, UNSHIPPED_SALE } from "./admin-orders.service";
+import { afterStockIncrease } from "../engagement/stock-alerts";
 import { addSold } from "./lifecycle";
 import { refundEmail } from "./order.emails";
 import { orderInclude } from "./order.mapper";
@@ -164,6 +165,7 @@ export async function refundOrder(number: string, input: RefundOrderInput, admin
     }
   });
 
+  if (restock) await afterStockIncrease(order.items.map((i) => i.variantId));
   const updated = await prisma.order.findUniqueOrThrow({
     where: { id: order.id },
     include: orderInclude,

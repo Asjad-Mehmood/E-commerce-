@@ -2,6 +2,7 @@
  * Response shapes (DTOs) returned by the API and consumed by the frontends.
  * All money fields are integers in minor units.
  */
+import type { ReturnDTO } from "./engagement";
 import type {
   DiscountType,
   Fit,
@@ -306,6 +307,7 @@ export interface CheckoutResultDTO {
 // ───────────── Orders ─────────────
 
 export interface OrderItemDTO {
+  id: string;
   title: string;
   slug: string;
   size: string;
@@ -361,6 +363,12 @@ export interface OrderDTO {
   payBy: string | null;
   canCancel: boolean;
   canPay: boolean;
+  /** Return requests for this order, newest first. */
+  returns: ReturnDTO[];
+  /** True while a return can be requested (delivered, within the return window, items left). */
+  canReturn: boolean;
+  /** Last day to request a return (ISO), or null once that no longer applies. */
+  returnBy: string | null;
 }
 
 export interface OrderListItemDTO {

@@ -164,3 +164,20 @@ export const PNG_1PX = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
   "base64",
 );
+
+/** Moves an order through to DELIVERED with a staff agent. */
+export async function deliver(number: string, staff?: request.Agent) {
+  const agent = staff ?? (await signedInAgent("SUPPORT")).agent;
+  for (const status of ["PROCESSING", "SHIPPED", "DELIVERED"]) {
+    const res = await agent.patch(`/api/v1/admin/orders/${number}/status`).send({ status });
+    if (res.status !== 200) throw new Error(`status ${status} failed: ${JSON.stringify(res.body)}`);
+  }
+}
+
+/** A Cash on Delivery order placed by a signed-in customer (their cart and email). */
+export async function placeOrderAs(agent: request.Agent, email: string, items: [string, number][]) {
+  await cartWith(items, agent);
+  const res = await agent.post("/api/v1/checkout").send(checkoutBody({ email }));
+  if (res.status !== 201) throw new Error(`checkout failed: ${JSON.stringify(res.body)}`);
+  return res.body.data as { orderNumber: string; accessToken: string; total: number };
+}

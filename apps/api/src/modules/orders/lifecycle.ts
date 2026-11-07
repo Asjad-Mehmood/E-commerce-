@@ -5,12 +5,16 @@ import { logger } from "../../lib/logger";
 import { sendMail } from "../../lib/mailer";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
+import { enqueue } from "../../jobs/queue";
+import { afterStockIncrease } from "../engagement/stock-alerts";
 import { getPaymentProvider, type PaymentEvent } from "../payments";
 import { cancelledEmail, confirmationEmail, deliveredEmail, shippedEmail } from "./order.emails";
 import { orderInclude, type FullOrder } from "./order.mapper";
 import * as stock from "./stock";
 
 type Tx = Prisma.TransactionClient;
+
+export const REVIEW_REQUEST_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
 
 const loadOrder = (id: string) =>
   prisma.order.findUniqueOrThrow({ where: { id }, include: orderInclude });
@@ -241,6 +245,7 @@ export async function cancelOrder(
   }
 
   const order = await loadOrder(orderId);
+  await afterStockIncrease(order.items.map((i) => i.variantId));
   if (opts.notify !== false) void sendMail(cancelledEmail(order, opts.reason));
   return order;
 }
@@ -304,6 +309,7 @@ export async function updateOrderStatus(
       where: { id: orderId, status: order.status },
       data: {
         status: input.status,
+        ...(input.status === "DELIVERED" ? { deliveredAt: new Date() } : {}),
         ...(input.trackingNumber ? { trackingNumber: input.trackingNumber } : {}),
         ...(input.courier ? { courier: input.courier } : {}),
       },
@@ -324,6 +330,14 @@ export async function updateOrderStatus(
 
   const updated = await loadOrder(orderId);
   if (input.status === "SHIPPED") void sendMail(shippedEmail(updated));
-  if (input.status === "DELIVERED") void sendMail(deliveredEmail(updated));
+  if (input.status === "DELIVERED") {
+    void sendMail(deliveredEmail(updated));
+    // A week later, ask for a review (needs the Redis job queue for the delay).
+    void enqueue(
+      "review-request",
+      { orderId },
+      { delay: REVIEW_REQUEST_DELAY_MS, jobId: `review-request-${orderId}` },
+    ).catch((err) => logger.error({ err, orderId }, "Could not schedule the review request"));
+  }
   return updated;
 }

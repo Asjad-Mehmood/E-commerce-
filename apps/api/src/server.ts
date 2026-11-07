@@ -1,12 +1,16 @@
 import { createApp } from "./app";
 import { startJobs } from "./jobs";
+import { queue } from "./jobs/queue";
 import { env } from "./config/env";
 import { logger } from "./lib/logger";
 import { prisma } from "./lib/prisma";
 import { redis } from "./lib/redis";
 
 const app = createApp();
-const stopJobs = startJobs();
+const stopJobs = startJobs().catch((err) => {
+  logger.error({ err }, "Background jobs failed to start");
+  return async () => {};
+});
 
 const server = app.listen(env.PORT, () => {
   logger.info(`🚀 API ready at http://localhost:${env.PORT}/api/v1 (${env.NODE_ENV})`);
@@ -15,9 +19,11 @@ const server = app.listen(env.PORT, () => {
 
 async function shutdown(signal: string) {
   logger.info(`${signal} received, shutting down…`);
-  stopJobs();
+  await (
+    await stopJobs
+  )();
   server.close(async () => {
-    await Promise.allSettled([prisma.$disconnect(), redis?.quit()]);
+    await Promise.allSettled([queue?.close(), prisma.$disconnect(), redis?.quit()]);
     process.exit(0);
   });
   // Force exit if connections do not close in time.

@@ -6,6 +6,7 @@ import { paginated, skipTake } from "../../lib/http";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
 import { cardInclude, detailInclude, toProductCard, toProductDetail } from "./catalog.mapper";
+import { searchProductIds } from "./search";
 
 const ACTIVE = "ACTIVE" as const;
 
@@ -18,18 +19,11 @@ const inCollection = (slug: string): Prisma.ProductWhereInput => ({
   collections: { some: { slug } },
 });
 
-function listWhere(q: ProductListQuery): Prisma.ProductWhereInput {
+function listWhere(q: ProductListQuery, searchIds?: string[]): Prisma.ProductWhereInput {
   const and: Prisma.ProductWhereInput[] = [{ status: ACTIVE }];
 
-  if (q.q) {
-    and.push({
-      OR: [
-        { title: { contains: q.q, mode: "insensitive" } },
-        { description: { contains: q.q, mode: "insensitive" } },
-        { categories: { some: { name: { contains: q.q, mode: "insensitive" } } } },
-      ],
-    });
-  }
+  if (searchIds) and.push({ id: { in: searchIds } });
+  if (q.slugs?.length) and.push({ slug: { in: q.slugs } });
   if (q.category) and.push(inCategory(q.category));
   if (q.collection) and.push(inCollection(q.collection));
   if (q.fit?.length) and.push({ fit: { in: q.fit } });
@@ -61,10 +55,36 @@ const ORDER_BY: Record<ProductSort, Prisma.ProductOrderByWithRelationInput[]> = 
   price_desc: [{ basePrice: "desc" }, { id: "asc" }],
   best_selling: [{ soldCount: "desc" }, { id: "asc" }],
   top_rated: [{ avgRating: "desc" }, { reviewCount: "desc" }, { id: "asc" }],
+  // Applied in listProducts (needs the search ranking); this is the no-query fallback.
+  relevance: [{ publishedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
 };
 
+/** Fetches cards for ids and returns them in the given order. */
+async function cardsInOrder(ids: string[]) {
+  const rows = await prisma.product.findMany({ where: { id: { in: ids } }, include: cardInclude });
+  const byId = new Map(rows.map((p) => [p.id, p]));
+  return ids.flatMap((id) => (byId.has(id) ? [toProductCard(byId.get(id)!)] : []));
+}
+
 export async function listProducts(q: ProductListQuery) {
-  const where = listWhere(q);
+  const searchIds = q.q ? await searchProductIds(q.q) : undefined;
+  const where = listWhere(q, searchIds);
+
+  // Best match first (search), or the requested order (recently viewed): rank in memory.
+  const rankBy = q.slugs?.length ? "slugs" : searchIds && q.sort === "relevance" ? "search" : null;
+  if (rankBy) {
+    const matches = await prisma.product.findMany({ where, select: { id: true, slug: true } });
+    const position = (p: { id: string; slug: string }) =>
+      rankBy === "slugs" ? q.slugs!.indexOf(p.slug) : searchIds!.indexOf(p.id);
+    const ordered = matches.sort((a, b) => position(a) - position(b)).map((p) => p.id);
+    const page = ordered.slice((q.page - 1) * q.limit, q.page * q.limit);
+    return paginated(await cardsInOrder(page), {
+      page: q.page,
+      limit: q.limit,
+      total: ordered.length,
+    });
+  }
+
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
@@ -86,7 +106,10 @@ export async function getProduct(slug: string) {
   return toProductDetail(product);
 }
 
-/** Best sellers from the same categories, topped up with overall best sellers. */
+/**
+ * "You may also like": products often bought together with this one, then best
+ * sellers from the same categories, topped up with overall best sellers.
+ */
 export async function relatedProducts(slug: string, limit = 8) {
   const product = await prisma.product.findFirst({
     where: { slug, status: ACTIVE },
@@ -94,16 +117,31 @@ export async function relatedProducts(slug: string, limit = 8) {
   });
   if (!product) throw AppError.notFound("Product");
 
-  const related = await prisma.product.findMany({
-    where: {
-      status: ACTIVE,
-      id: { not: product.id },
-      categories: { some: { id: { in: product.categories.map((c) => c.id) } } },
-    },
-    include: cardInclude,
-    orderBy: [{ soldCount: "desc" }, { id: "asc" }],
-    take: limit,
-  });
+  const together = await prisma.$queryRaw<{ productId: string }[]>`
+    SELECT other."productId" FROM "OrderItem" mine
+    JOIN "OrderItem" other ON other."orderId" = mine."orderId" AND other."productId" <> mine."productId"
+    JOIN "Order" o ON o.id = mine."orderId"
+    JOIN "Product" p ON p.id = other."productId" AND p.status = 'ACTIVE'
+    WHERE mine."productId" = ${product.id}
+      AND o.status IN ('CONFIRMED','PAID','PROCESSING','SHIPPED','DELIVERED')
+    GROUP BY other."productId"
+    ORDER BY count(DISTINCT o.id) DESC
+    LIMIT ${limit}`;
+  const related = await cardsInOrderRaw(together.map((r) => r.productId));
+
+  if (related.length < limit) {
+    const sameCategory = await prisma.product.findMany({
+      where: {
+        status: ACTIVE,
+        id: { notIn: [product.id, ...related.map((p) => p.id)] },
+        categories: { some: { id: { in: product.categories.map((c) => c.id) } } },
+      },
+      include: cardInclude,
+      orderBy: [{ soldCount: "desc" }, { id: "asc" }],
+      take: limit - related.length,
+    });
+    related.push(...sameCategory);
+  }
 
   if (related.length < limit) {
     const fill = await prisma.product.findMany({
@@ -115,6 +153,11 @@ export async function relatedProducts(slug: string, limit = 8) {
     related.push(...fill);
   }
   return related.map(toProductCard);
+}
+
+async function cardsInOrderRaw(ids: string[]) {
+  const rows = await prisma.product.findMany({ where: { id: { in: ids } }, include: cardInclude });
+  return ids.flatMap((id) => rows.filter((p) => p.id === id));
 }
 
 const activeCount = { _count: { select: { products: { where: { status: ACTIVE } } } } } as const;

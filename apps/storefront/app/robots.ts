@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
         "/verify-email",
         "/orders",
         "/track-order",
+        "/unsubscribe",
       ],
     },
     sitemap: `${siteConfig.url}/sitemap.xml`,

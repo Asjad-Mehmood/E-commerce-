@@ -1,5 +1,7 @@
 import type { OrderDTO, PaymentSessionDTO } from "@hoodie/types";
+import type { ReturnRequestInput } from "@hoodie/validation";
 import { paginated, skipTake } from "../../lib/http";
+import { requestReturn, returnWindowDays } from "../returns/returns.service";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
 import { getPaymentProvider } from "../payments";
@@ -38,7 +40,18 @@ export async function findViewableOrder(number: string, viewer: Viewer): Promise
 }
 
 export async function getOrder(number: string, viewer: Viewer): Promise<OrderDTO> {
-  return toOrderDTO(await findViewableOrder(number, viewer));
+  return toOrderDTO(await findViewableOrder(number, viewer), await returnWindowDays());
+}
+
+/** Customer return request (owner or order-link holder). */
+export async function requestReturnByCustomer(
+  number: string,
+  viewer: Viewer,
+  input: ReturnRequestInput,
+): Promise<OrderDTO> {
+  const order = await findViewableOrder(number, viewer);
+  await requestReturn(order.id, input);
+  return getOrder(number, viewer);
 }
 
 export async function listMyOrders(userId: string, page: { page: number; limit: number }) {
@@ -74,7 +87,7 @@ export async function cancelByCustomer(number: string, viewer: Viewer): Promise<
     changedBy: viewer.userId ?? null,
     allowed: [...CUSTOMER_CANCELLABLE],
   });
-  return toOrderDTO(updated);
+  return toOrderDTO(updated, await returnWindowDays());
 }
 
 /** Payment details to (re)open the card form for an unpaid order. */

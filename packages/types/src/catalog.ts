@@ -9,6 +9,8 @@ export const PRODUCT_SORTS = [
   "price_desc",
   "best_selling",
   "top_rated",
+  /** Best match first (search only; falls back to newest without a query). */
+  "relevance",
 ] as const;
 export type ProductSort = (typeof PRODUCT_SORTS)[number];
 

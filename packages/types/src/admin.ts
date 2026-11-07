@@ -125,6 +125,10 @@ export interface AdminNotificationsDTO {
   toFulfil: number;
   newMessages: number;
   lowStock: number;
+  /** Return requests waiting for a decision. */
+  pendingReturns: number;
+  /** Reviews waiting for moderation. */
+  pendingReviews: number;
   latestOrder: { number: string; placedAt: string; grandTotal: number } | null;
 }
 
@@ -170,6 +174,8 @@ export interface InventoryRowDTO {
   available: number;
   lowStockAt: number;
   isActive: boolean;
+  /** Shoppers waiting for a back-in-stock email. */
+  waiting: number;
 }
 
 export interface StockAdjustmentDTO {
@@ -334,6 +340,8 @@ export interface StoreSettingsDTO {
   "payments.card.enabled": boolean;
   "payments.cod.enabled": boolean;
   "returns.windowDays": number;
+  "reviews.autoApprove": boolean;
+  "notifications.dailyDigest": boolean;
 }
 
 export interface StoreSettingsResponseDTO {

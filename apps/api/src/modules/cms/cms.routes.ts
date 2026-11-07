@@ -1,9 +1,11 @@
 import type { BannerDTO, FaqDTO, HomeContentDTO, PageDTO } from "@hoodie/types";
 import { contactMessageSchema, newsletterSchema, stockAlertSchema } from "@hoodie/validation";
 import { ok } from "../../lib/http";
+import { sendMail } from "../../lib/mailer";
 import { prisma } from "../../lib/prisma";
 import { defineRoutes, route } from "../../lib/route";
 import { AppError } from "../../utils/app-error";
+import { newsletterWelcomeEmail } from "../engagement/emails";
 
 async function getSetting<T>(key: string): Promise<T | undefined> {
   const row = await prisma.setting.findUnique({ where: { key } });
@@ -98,16 +100,18 @@ export const formsRouter = defineRoutes("", "Content", [
     path: "/newsletter",
     summary: "Subscribe to the newsletter",
     description:
-      "Always returns 204 (re-subscribes if previously unsubscribed), so it never reveals who is subscribed.",
+      "Always returns 204 (re-subscribes if previously unsubscribed), so it never reveals who is subscribed. New subscribers get a welcome email with an unsubscribe link.",
     access: "public",
     rateLimit: "forms",
     body: newsletterSchema,
     handler: async ({ body }) => {
+      const before = await prisma.newsletterSubscriber.findUnique({ where: { email: body.email } });
       await prisma.newsletterSubscriber.upsert({
         where: { email: body.email },
         create: { email: body.email },
         update: { unsubscribedAt: null },
       });
+      if (!before || before.unsubscribedAt) void sendMail(newsletterWelcomeEmail(body.email));
     },
   }),
   route({

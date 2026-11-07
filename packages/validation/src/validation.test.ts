@@ -144,3 +144,41 @@ describe("update schemas never inject defaults", () => {
     expect(schema.parse(input)).toEqual(input);
   });
 });
+
+describe("engagement schemas", async () => {
+  const { reviewSchema, returnRequestSchema, unsubscribeSchema } = await import("./engagement");
+
+  it("validates reviews", () => {
+    expect(reviewSchema.safeParse({ rating: 5, body: "Lovely and warm hoodie." }).success).toBe(
+      true,
+    );
+    expect(reviewSchema.safeParse({ rating: 6, body: "Lovely and warm hoodie." }).success).toBe(
+      false,
+    );
+    expect(reviewSchema.safeParse({ rating: 4, body: "short" }).success).toBe(false);
+    expect(
+      reviewSchema.parse({ rating: 3, title: "  ", body: "Fine, a bit thin." }).title,
+    ).toBeNull();
+  });
+
+  it("validates return requests", () => {
+    const item = { orderItemId: "a", quantity: 1 };
+    expect(returnRequestSchema.safeParse({ items: [item], reason: "wrong_size" }).success).toBe(
+      true,
+    );
+    expect(returnRequestSchema.safeParse({ items: [], reason: "wrong_size" }).success).toBe(false);
+    expect(returnRequestSchema.safeParse({ items: [item], reason: "other" }).success).toBe(false);
+    expect(returnRequestSchema.safeParse({ items: [item, item], reason: "damaged" }).success).toBe(
+      false,
+    );
+  });
+
+  it("normalises unsubscribe emails", () => {
+    const parsed = unsubscribeSchema.parse({
+      type: "cart",
+      email: " Ali@Example.com ",
+      token: "x".repeat(32),
+    });
+    expect(parsed.email).toBe("ali@example.com");
+  });
+});

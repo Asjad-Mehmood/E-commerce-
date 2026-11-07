@@ -19,7 +19,10 @@ export async function findVariant(
   status: Variant["stockStatus"] | "available",
 ) {
   const list = await (await request.get(`${API}/products?limit=50`)).json();
-  for (const card of list.data as { slug: string }[]) {
+  // Skip throwaway products that other tests create and archive in parallel.
+  for (const card of (list.data as { slug: string; title: string }[]).filter(
+    (c) => !c.title.startsWith("E2E "),
+  )) {
     const detail = (await (await request.get(`${API}/products/${card.slug}`)).json()).data;
     const variant = (detail.variants as Variant[]).find((v) =>
       status === "available" ? v.stockStatus === "in_stock" : v.stockStatus === status,

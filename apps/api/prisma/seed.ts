@@ -19,6 +19,7 @@ import {
   products,
   settings,
   shippingZones,
+  demoReviews,
 } from "./seed-data";
 
 const prisma = new PrismaClient();
@@ -229,6 +230,55 @@ async function seedPromotions() {
   console.log(`  ✔ ${coupons.length} coupons, ${banners.length} banners`);
 }
 
+/** A few approved reviews from demo shoppers, so ratings show up in development. */
+async function seedReviews() {
+  const reviewers = [
+    { email: "ayesha.reviewer@hoodie.local", name: "Ayesha Malik" },
+    { email: "bilal.reviewer@hoodie.local", name: "Bilal Ahmed" },
+    { email: "sara.reviewer@hoodie.local", name: "Sara Khan" },
+  ];
+  const users = [];
+  for (const r of reviewers) {
+    // No password: these accounts only exist to own the demo reviews.
+    users.push(
+      await prisma.user.upsert({
+        where: { email: r.email },
+        update: {},
+        create: { ...r, emailVerified: new Date() },
+      }),
+    );
+  }
+  let created = 0;
+  for (const [slug, entries] of Object.entries(demoReviews)) {
+    const product = await prisma.product.findUnique({ where: { slug }, select: { id: true } });
+    if (!product) continue;
+    for (const [i, review] of entries.entries()) {
+      const user = users[i % users.length]!;
+      const exists = await prisma.review.findUnique({
+        where: { productId_userId: { productId: product.id, userId: user.id } },
+      });
+      if (exists) continue;
+      await prisma.review.create({
+        data: { ...review, productId: product.id, userId: user.id, isApproved: true },
+      });
+      created++;
+    }
+    const agg = await prisma.review.aggregate({
+      where: { productId: product.id, isApproved: true },
+      _avg: { rating: true },
+      _count: { _all: true },
+    });
+    await prisma.product.update({
+      where: { id: product.id },
+      data: {
+        avgRating: Math.round((agg._avg.rating ?? 0) * 10) / 10,
+        reviewCount: agg._count._all,
+      },
+    });
+  }
+  console.log(`  ✔ ${created} demo reviews`);
+}
+
 async function main() {
   console.log(`🌱 Seeding database (${isProd ? "production: essentials only" : "development"})…`);
   await seedAdmin();
@@ -239,6 +289,7 @@ async function main() {
     await seedDemoCustomer();
     await seedCatalog();
     await seedPromotions();
+    await seedReviews();
   }
   console.log("✅ Seed complete");
 }

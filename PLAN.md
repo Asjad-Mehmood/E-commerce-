@@ -1014,7 +1014,18 @@ Estimated for 1–2 developers. Adjust to your team size.
 
 **Deliverable:** the store can be fully run from the admin panel.
 
-### Phase 5: Engagement Features (Weeks 9–10)
+### Phase 5: Engagement Features (Weeks 9–10) ✅ complete
+
+> Done: reviews and ratings from verified buyers with moderation and public replies, review-request email a week after delivery; wishlist; back-in-stock emails; newsletter welcome email, signed unsubscribe links, subscriber list and CSV export; abandoned-cart reminders (after 1 hour and 1 day); typo-tolerant search with ranking and search-as-you-type suggestions; "You may also like" based on products bought together; recently viewed; returns (customer request within the return window, approve / decline, receive with restock, refund through the payment provider or recorded for COD); BullMQ job queue with retrying emails and scheduled jobs; daily summary email for managers; Google sign-in.
+>
+> Changes from the original plan:
+>
+> - Reviews need a delivered order containing the product (from the reviewer's account, or placed with their verified email). Photo uploads on reviews are not built.
+> - Returns are refunds only; exchanges are handled by the customer noting the size they want and staff placing a new order.
+> - Cart reminders go to signed-in customers only, because guest carts have no email address until checkout.
+> - Newsletter campaigns are sent from an external email tool using the CSV export; the store only collects subscribers.
+> - Without Redis, the daily summary and review-request emails are skipped; everything else falls back to in-process timers.
+> - Custom hoodie designer (optional) is not built; it stays in Future Enhancements.
 
 - Reviews and ratings (verified purchases), wishlist.
 - Back-in-stock alerts, newsletter, abandoned cart emails.
@@ -1062,7 +1073,7 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [x] Prisma schema, migrations, seed
 - [x] Express app: helmet, cors, compression, pino, error handler
 - [x] Auth module (JWT cookies, refresh rotation, email verify, reset)
-- [ ] Google OAuth (moved to Phase 5)
+- [x] Google OAuth
 - [x] RBAC middleware
 - [x] Rate limiting (Redis) and CSRF origin check
 - [x] Profile and address book
@@ -1077,9 +1088,9 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [x] Stripe PaymentIntent and webhooks (+ demo mode), refunds
 - [x] COD flow
 - [x] Orders and status history, invoice PDF
-- [ ] Reviews, wishlist
+- [x] Reviews, wishlist, returns
 - [x] CMS (banners, pages, FAQ, announcement), contact inbox, newsletter sign-up
-- [ ] BullMQ workers: emails, reservation expiry, stock alerts, abandoned cart
+- [x] BullMQ workers: emails, reservation expiry, stock alerts, abandoned cart, daily summary, review requests
 - [x] Admin endpoints: dashboard, reports, customers, staff, settings, audit log
 - [x] OpenAPI docs
 - [x] API tests (Phase 1 scope; extended each phase)
@@ -1090,7 +1101,7 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [x] Header / footer / mega-menu / mobile nav
 - [x] Home page
 - [x] Shop, category and collection pages with filters/sort/pagination
-- [x] Product detail page (gallery, variant picker, size guide); reviews in Phase 5
+- [x] Product detail page (gallery, variant picker, size guide, reviews)
 - [x] Search
 - [x] Cart drawer and cart page
 - [x] Checkout with Stripe (or demo cards) and COD
@@ -1098,13 +1109,13 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [x] Auth pages (sign in, register, forgot/reset password, verify email)
 - [x] Account: overview, profile, password, addresses
 - [x] Account: orders, order detail
-- [ ] Account: wishlist (Phase 5)
+- [x] Account: wishlist
 - [x] Guest order tracking
 - [x] Content pages (about, contact, FAQ, policies, size guide)
 - [x] SEO (metadata, JSON-LD, sitemap, robots, real 404s)
 - [ ] Analytics events
 
-### Admin (Phase 4 ✅)
+### Admin (Phases 4–5 ✅)
 
 - [x] Admin login and protected layout
 - [x] Dashboard KPIs and charts
@@ -1112,9 +1123,9 @@ Estimated for 1–2 developers. Adjust to your team size.
 - [x] Categories and collections
 - [x] Inventory and adjustments
 - [x] Orders list/detail, status, tracking, refunds, PDFs, CSV export
-- [ ] Returns (Phase 5)
+- [x] Returns
 - [x] Customers
-- [ ] Reviews moderation (Phase 5)
+- [x] Reviews moderation
 - [x] Coupons
 - [x] Shipping settings
 - [x] CMS

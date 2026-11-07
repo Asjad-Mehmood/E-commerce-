@@ -26,6 +26,8 @@ test("mega menu leads to a category page that only lists that category", async (
 
 test("filters update the URL and results, and can be cleared", async ({ page }) => {
   await page.goto("/shop");
+  // The filters work once the page's scripts have loaded.
+  await page.waitForLoadState("networkidle");
   const count = page.getByText(/^\d+ products?$/);
   const before = await count.textContent();
 
@@ -51,7 +53,7 @@ test("sorting by price orders the grid", async ({ page }) => {
 test("search finds products", async ({ page }) => {
   await page.goto("/search");
   await page.getByRole("searchbox", { name: "Search hoodies" }).fill("sherpa");
-  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Sherpa-Lined Zip Hoodie" })).toBeVisible();
 });
 

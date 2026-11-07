@@ -1,11 +1,13 @@
 import type { OrderAddressDTO, OrderDTO, OrderListItemDTO, OrderTrackingDTO } from "@hoodie/types";
 import type { Prisma } from "@prisma/client";
 import { SHIPPING_LABEL } from "../checkout/pricing";
+import { returnWindow, toReturnDTO } from "../returns/returns.shared";
 
 export const orderInclude = {
   items: true,
   payments: { orderBy: { createdAt: "desc" } },
   history: { orderBy: { createdAt: "asc" } },
+  returns: { orderBy: { createdAt: "desc" } },
 } satisfies Prisma.OrderInclude;
 
 export type FullOrder = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
@@ -31,7 +33,9 @@ export function canPay(
   );
 }
 
-export function toOrderDTO(o: FullOrder): OrderDTO {
+/** `returnWindowDays` comes from the returns.windowDays setting. */
+export function toOrderDTO(o: FullOrder, returnWindowDays = 14): OrderDTO {
+  const window = returnWindow(o, returnWindowDays);
   return {
     number: o.orderNumber,
     status: o.status,
@@ -40,6 +44,7 @@ export function toOrderDTO(o: FullOrder): OrderDTO {
     phone: o.phone,
     shippingAddress: o.shippingAddress as unknown as OrderAddressDTO,
     items: o.items.map((i) => ({
+      id: i.id,
       title: i.productTitle,
       slug: i.productSlug,
       size: i.size,
@@ -68,6 +73,9 @@ export function toOrderDTO(o: FullOrder): OrderDTO {
     payBy: canPay(o) ? o.reservedUntil!.toISOString() : null,
     canCancel: (CUSTOMER_CANCELLABLE as readonly string[]).includes(o.status),
     canPay: canPay(o),
+    returns: o.returns.map((r) => toReturnDTO(r, o.items)),
+    canReturn: window.canReturn,
+    returnBy: window.returnBy,
   };
 }
 

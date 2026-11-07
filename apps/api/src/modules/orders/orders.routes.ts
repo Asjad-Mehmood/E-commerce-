@@ -1,4 +1,4 @@
-import { paginationSchema, trackOrderSchema } from "@hoodie/validation";
+import { paginationSchema, returnRequestSchema, trackOrderSchema } from "@hoodie/validation";
 import { z } from "zod";
 import { ok } from "../../lib/http";
 import { storeInfo } from "../../lib/settings";
@@ -51,6 +51,20 @@ export const ordersRouter = defineRoutes("/orders", "Orders", [
     query: tokenQuery,
     handler: async ({ req, params, query }) =>
       ok(await orders.cancelByCustomer(params.number!, viewer(req, query.token))),
+  }),
+  route({
+    method: "post",
+    path: "/:number/returns",
+    summary: "Ask to return items from a delivered order",
+    description:
+      "Within the store's return window (returns.windowDays after delivery), one open request at a time. Staff approve or decline it; the customer is emailed at each step.",
+    access: "optional",
+    rateLimit: "forms",
+    query: tokenQuery,
+    body: returnRequestSchema,
+    status: 201,
+    handler: async ({ req, params, query, body }) =>
+      ok(await orders.requestReturnByCustomer(params.number!, viewer(req, query.token), body)),
   }),
   route({
     method: "get",

@@ -33,6 +33,7 @@ interface Row {
   reserved: number;
   lowStockAt: number;
   isActive: boolean;
+  waiting: number;
 }
 
 const toRow = (r: Row): InventoryRowDTO => ({ ...r, available: r.stock - r.reserved });
@@ -60,7 +61,9 @@ const SELECT = Prisma.sql`
        AND (im.color IS NULL OR lower(im.color) = lower(v.color))
      ORDER BY (im.color IS NULL), im.position LIMIT 1) AS image,
     v.sku, v.size, v.color, v."colorHex", COALESCE(v.price, p."basePrice") AS price,
-    v.stock, v.reserved, v."lowStockAt", v."isActive"
+    v.stock, v.reserved, v."lowStockAt", v."isActive",
+    (SELECT count(*)::int FROM "StockAlert" sa
+     WHERE sa."variantId" = v.id AND sa."notifiedAt" IS NULL) AS waiting
   FROM "ProductVariant" v JOIN "Product" p ON p.id = v."productId"`;
 
 export async function listInventory(q: InventoryQuery) {

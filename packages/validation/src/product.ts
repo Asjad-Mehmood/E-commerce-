@@ -130,6 +130,8 @@ export const productListQuerySchema = paginationSchema.extend({
     .transform((v) => v === "true")
     .optional(),
   sort: z.enum(PRODUCT_SORTS).default("newest"),
+  /** Specific products, in this order (e.g. "recently viewed"). Other filters still apply. */
+  slugs: csv(z.string().max(120)).pipe(z.array(z.string()).max(24)).optional(),
 });
 export type ProductListQuery = z.infer<typeof productListQuerySchema>;
 

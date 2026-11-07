@@ -11,6 +11,7 @@ import { paginated, skipTake } from "../../lib/http";
 import { prisma } from "../../lib/prisma";
 import { storeTimeZone } from "../../lib/settings";
 import { AppError } from "../../utils/app-error";
+import { returnWindowDays } from "../returns/returns.shared";
 import { CANCELLABLE, NEXT } from "./lifecycle";
 import { orderInclude, toOrderDTO } from "./order.mapper";
 
@@ -153,7 +154,7 @@ export async function toAdminOrderDTO(o: AdminFullOrder): Promise<AdminOrderDTO>
     ...o.history.map((h) => h.changedBy),
     ...o.refunds.map((r) => r.createdBy),
   ]);
-  const base = toOrderDTO(o);
+  const base = toOrderDTO(o, await returnWindowDays());
   return {
     ...base,
     id: o.id,

@@ -10,6 +10,7 @@ import { sendMail } from "../../lib/mailer";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
 import { passwordResetEmail, verificationEmail } from "./auth.emails";
+import type { GoogleProfile } from "./google";
 
 const HOUR = 60 * 60 * 1000;
 const TOKEN_TTL: Record<AuthTokenType, number> = {
@@ -248,4 +249,44 @@ export async function changePassword(
       data: { revokedAt: new Date() },
     }),
   ]);
+}
+
+/**
+ * Signs in with a Google profile: the account linked to this Google ID, else
+ * the account with the same (Google-verified) email, which gets linked, else a
+ * new customer account. Unverified Google emails never take over an account.
+ */
+export async function loginWithGoogle(
+  profile: GoogleProfile,
+  client: ClientInfo,
+): Promise<Session> {
+  let user = await prisma.user.findUnique({ where: { googleId: profile.sub } });
+  if (!user) {
+    const byEmail = await prisma.user.findUnique({ where: { email: profile.email } });
+    if (byEmail) {
+      if (!profile.emailVerified) {
+        throw new AppError(
+          ErrorCode.CONFLICT,
+          "An account with this email already exists. Sign in with your password.",
+        );
+      }
+      user = await prisma.user.update({
+        where: { id: byEmail.id },
+        data: { googleId: profile.sub, emailVerified: byEmail.emailVerified ?? new Date() },
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          email: profile.email,
+          name: profile.name.slice(0, 80),
+          googleId: profile.sub,
+          emailVerified: profile.emailVerified ? new Date() : null,
+        },
+      });
+    }
+  }
+  if (user.isBlocked)
+    throw new AppError(ErrorCode.ACCOUNT_BLOCKED, "This account has been blocked");
+  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  return createSession(user, client);
 }

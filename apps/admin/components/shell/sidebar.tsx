@@ -4,7 +4,15 @@ import type { AdminNotificationsDTO, Role } from "@hoodie/types";
 import { Badge, cn } from "@hoodie/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { activeItem, BUILT_PHASE, navForRole } from "@/lib/nav";
+import { activeItem, BUILT_PHASE, navForRole, type NavItem } from "@/lib/nav";
+
+const BADGE_SR: Record<NonNullable<NavItem["badge"]>, string> = {
+  toFulfil: " to fulfil)",
+  newMessages: " new)",
+  lowStock: " low on stock)",
+  pendingReturns: " waiting for a decision)",
+  pendingReviews: " to moderate)",
+};
 
 export function SidebarNav({
   role,
@@ -68,13 +76,7 @@ export function SidebarNav({
                       >
                         <span className="sr-only">(</span>
                         {count > 99 ? "99+" : count}
-                        <span className="sr-only">
-                          {item.badge === "toFulfil"
-                            ? " to fulfil)"
-                            : item.badge === "newMessages"
-                              ? " new)"
-                              : " low on stock)"}
-                        </span>
+                        <span className="sr-only">{BADGE_SR[item.badge!]}</span>
                       </span>
                     )}
                   </Link>

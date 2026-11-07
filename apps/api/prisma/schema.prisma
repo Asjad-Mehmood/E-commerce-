@@ -98,6 +98,8 @@ model User {
   isBlocked     Boolean   @default(false)
   /// Private staff notes about a customer (admin only).
   adminNote     String?
+  /// Abandoned-cart reminder emails (customers can switch them off from the email).
+  cartReminders Boolean   @default(true)
   lastLoginAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -236,6 +238,8 @@ model Product {
   @@index([status, createdAt])
   @@index([status, soldCount])
   @@index([isFeatured])
+  /// Typo-tolerant search (pg_trgm, created in the search migration).
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "Product_title_trgm_idx")
 }
 
 /// A purchasable size × colour combination with its own SKU and stock.
@@ -299,13 +303,16 @@ model InventoryAdjustment {
 // ───────────────────────────── Cart & wishlist ─────────────────────────────
 
 model Cart {
-  id        String   @id @default(cuid())
-  userId    String?  @unique
+  id             String    @id @default(cuid())
+  userId         String?   @unique
   /// Guest cart token (cookie). Null once merged into a user cart.
-  token     String?  @unique
-  couponId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  token          String?   @unique
+  couponId       String?
+  /// Abandoned-cart emails sent since the cart last changed (0, 1 or 2).
+  remindersSent  Int       @default(0)
+  lastReminderAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user   User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   coupon Coupon?    @relation(fields: [couponId], references: [id], onDelete: SetNull)
@@ -398,6 +405,7 @@ model Order {
   /// Cart the order was placed from (cleared once paid).
   cartId          String?
   paidAt          DateTime?
+  deliveredAt     DateTime?
   cancelledAt     DateTime?
   placedAt        DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -500,18 +508,23 @@ model ReturnRequest {
   id           String       @id @default(cuid())
   orderId      String
   status       ReturnStatus @default(REQUESTED)
+  /// Reason code, e.g. wrong_size (see RETURN_REASONS in @hoodie/validation).
   reason       String
+  details      String?
   /// [{ orderItemId, quantity }]
   items        Json
   refundAmount Int?
   restocked    Boolean      @default(false)
   adminNote    String?
+  receivedAt   DateTime?
+  refundedAt   DateTime?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([status, createdAt])
+  @@index([orderId])
 }
 
 /// Payment provider events already applied (webhooks can be delivered more than once).
@@ -543,6 +556,7 @@ model Review {
 
   @@unique([productId, userId])
   @@index([productId, isApproved, createdAt])
+  @@index([isApproved, createdAt])
 }
 
 // ───────────────────────────── Shipping ─────────────────────────────

@@ -105,7 +105,7 @@ export async function getDashboard(days: number, now = new Date()): Promise<Dash
 
 /** Small summary the admin top bar polls for its badges and new-order alerts. */
 export async function getNotifications(): Promise<AdminNotificationsDTO> {
-  const [toFulfil, newMessages, low, latest] = await Promise.all([
+  const [toFulfil, newMessages, low, latest, pendingReturns, pendingReviews] = await Promise.all([
     prisma.order.count({ where: { status: { in: [...TO_FULFIL] } } }),
     prisma.contactMessage.count({ where: { status: "NEW" } }),
     lowStockCount(),
@@ -114,11 +114,15 @@ export async function getNotifications(): Promise<AdminNotificationsDTO> {
       orderBy: { placedAt: "desc" },
       select: { orderNumber: true, placedAt: true, grandTotal: true },
     }),
+    prisma.returnRequest.count({ where: { status: "REQUESTED" } }),
+    prisma.review.count({ where: { isApproved: false } }),
   ]);
   return {
     toFulfil,
     newMessages,
     lowStock: low,
+    pendingReturns,
+    pendingReviews,
     latestOrder: latest
       ? {
           number: latest.orderNumber,

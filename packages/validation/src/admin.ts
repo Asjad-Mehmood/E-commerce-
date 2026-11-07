@@ -333,6 +333,8 @@ export const storeSettingsSchema = z.object({
   "payments.card.enabled": z.boolean(),
   "payments.cod.enabled": z.boolean(),
   "returns.windowDays": z.number().int().min(0).max(90),
+  "reviews.autoApprove": z.boolean(),
+  "notifications.dailyDigest": z.boolean(),
 });
 export type StoreSettings = z.infer<typeof storeSettingsSchema>;
 export const updateStoreSettingsSchema = storeSettingsSchema.partial();

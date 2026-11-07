@@ -2,22 +2,23 @@
 
 import type { ProductSort } from "@hoodie/types";
 import { PRODUCT_SORTS } from "@hoodie/types";
-import { SORT_LABELS } from "@/lib/listing";
+import { defaultSort, SORT_LABELS } from "@/lib/listing";
 import { FIT_LABEL } from "@/lib/size-guide";
 import { useListingNav } from "./listing-nav";
 
-export function SortSelect({ value }: { value: ProductSort }) {
+export function SortSelect({ value, search = false }: { value: ProductSort; search?: boolean }) {
   const { update } = useListingNav();
+  const fallback = defaultSort(search ? "q" : undefined);
   return (
     <label className="flex items-center gap-2 text-sm">
       <span className="text-muted hidden sm:inline">Sort by</span>
       <select
         value={value}
-        onChange={(e) => update({ sort: e.target.value === "newest" ? null : e.target.value })}
+        onChange={(e) => update({ sort: e.target.value === fallback ? null : e.target.value })}
         className="border-line bg-canvas h-9 rounded-lg border px-2 text-sm"
         aria-label="Sort products"
       >
-        {PRODUCT_SORTS.map((s) => (
+        {PRODUCT_SORTS.filter((s) => search || s !== "relevance").map((s) => (
           <option key={s} value={s}>
             {SORT_LABELS[s]}
           </option>

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { csvCell, toCsv } from "../src/lib/csv";
 import { addDays, dayOf, dayRange, startOfDay } from "../src/lib/dates";
 import { prisma } from "../src/lib/prisma";
@@ -116,6 +116,13 @@ async function orderAt(placedAt: Date, grandTotal: number, refunded = 0) {
 describe("reports", () => {
   // A quiet stretch far in the past, so other test files cannot affect the numbers.
   const year = 1990 + Math.floor(Math.random() * 20);
+
+  // These synthetic orders only exist for this file; clear earlier runs' copies.
+  beforeAll(() =>
+    prisma.order.deleteMany({
+      where: { orderNumber: { startsWith: "TEST-" }, placedAt: { lt: new Date("2010-01-01") } },
+    }),
+  );
   const day = `${year}-05-14`;
 
   it("groups net sales by local day, counting refunds against the order", async () => {

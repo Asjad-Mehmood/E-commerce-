@@ -1,6 +1,7 @@
 import type { CategoryDTO, HomeContentDTO, ProductCardDTO } from "@hoodie/types";
 import { Card, Container } from "@hoodie/ui";
 import Image from "next/image";
+import { RecentlyViewed } from "@/components/product/recently-viewed";
 import Link from "next/link";
 import { RefreshIcon, ShieldIcon, TruckIcon } from "@/components/icons";
 import { ProductGrid } from "@/components/product/product-card";
@@ -149,6 +150,10 @@ export default async function HomePage() {
           <ProductGrid products={bestSellers.data} />
         </Section>
       )}
+
+      <Container>
+        <RecentlyViewed />
+      </Container>
     </>
   );
 }

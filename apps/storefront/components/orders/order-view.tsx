@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
 import { siteConfig } from "@/lib/config";
 import { OrderProgress, OrderTimeline, StatusBadge } from "./order-progress";
+import { OrderReturns } from "./order-returns";
 
 function Line({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
@@ -165,6 +166,11 @@ export function OrderView({ number }: { number: string }) {
               ))}
             </ul>
           </section>
+          <OrderReturns
+            order={o}
+            qs={qs}
+            onUpdated={(updated) => qc.setQueryData(["order", number, token], updated)}
+          />
           <section aria-labelledby="history-heading">
             <h3 id="history-heading" className="mb-4 font-semibold">
               History

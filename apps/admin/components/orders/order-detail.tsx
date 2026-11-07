@@ -1,11 +1,13 @@
 "use client";
 
 import type { AdminOrderDTO, ApiResponse, OrderStatus } from "@hoodie/types";
+import { RETURN_REASON_LABEL } from "@hoodie/types";
 import { Badge, Button, Dialog, Field, Input, Skeleton } from "@hoodie/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
+import { ReturnBadge } from "@/components/returns/returns";
 import { Checkbox, Textarea } from "@/components/ui/controls";
 import { DetailList, ErrorState, PageHeader, Section } from "@/components/ui/page";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/ui/status";
@@ -679,6 +681,30 @@ export function OrderDetail({ number }: { number: string }) {
               </div>
             )}
           </Section>
+
+          {order.returns.length > 0 && (
+            <Section title="Returns">
+              <ul className="divide-line divide-y text-sm">
+                {order.returns.map((r) => (
+                  <li key={r.id}>
+                    <Link
+                      href={`/returns/${r.id}`}
+                      className="hover:bg-surface -mx-2 flex flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-2.5"
+                    >
+                      <span>
+                        {r.items.map((i) => `${i.title} (${i.size}) × ${i.quantity}`).join(", ")}
+                        <span className="text-muted block text-xs">
+                          {formatDateTime(r.createdAt)} ·{" "}
+                          {RETURN_REASON_LABEL[r.reason] ?? r.reason}
+                        </span>
+                      </span>
+                      <ReturnBadge status={r.status} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
 
           <Section title="History">
             <ol className="border-line space-y-4 border-l pl-5">

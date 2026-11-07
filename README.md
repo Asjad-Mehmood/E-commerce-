@@ -4,7 +4,7 @@ A full-stack e-commerce store for hoodies: a customer **storefront**, an **admin
 
 See **[PLAN.md](./PLAN.md)** for the full project plan and roadmap.
 
-> **Status: Phase 4 (admin dashboard) complete.** Customers can browse, buy (Cash on Delivery, or card in demo mode until Stripe keys are added), track and cancel orders. Staff run the store from the admin panel: orders, refunds, products, stock, customers, coupons, shipping, content, reports, staff and settings. Next up is Phase 5 (reviews, wishlist, returns and alerts).
+> **Status: Phase 5 (engagement) complete.** Customers can browse with typo-tolerant search, buy (Cash on Delivery, or card in demo mode until Stripe keys are added), review what they bought, save a wishlist, get back-in-stock and cart reminder emails, and request returns. Staff run everything from the admin panel. Next up is Phase 6 (polish, QA and launch).
 
 ---
 
@@ -75,6 +75,7 @@ Sign in to the admin panel at http://localhost:3001 with the Super Admin account
 - 3 shipping zones (Lahore, major cities, rest of Pakistan) with COD fees
 - 3 coupons (`WELCOME10`, `FREESHIP`, `WINTER500`), 2 homepage banners
 - Policy pages, FAQs, and store settings
+- 6 approved demo reviews on 3 products (from three demo reviewer accounts without passwords)
 
 The seed is **idempotent**, so you can run it again at any time. In `NODE_ENV=production` it only seeds essentials (admin, settings, shipping, pages, FAQ), and it refuses the example admin password.
 
@@ -101,16 +102,17 @@ Run one app or package with a filter, e.g. `pnpm --filter @hoodie/api dev`.
 
 ## Storefront
 
-| Page                                               | Route                                                                         |
-| -------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Home                                               | `/`                                                                           |
-| Shop / category / collection / search              | `/shop`, `/categories/[slug]`, `/collections/[slug]`, `/search?q=`            |
-| Product                                            | `/products/[slug]`                                                            |
-| Cart                                               | `/cart` (plus the slide-out cart drawer on every page)                        |
-| Checkout / payment / order / tracking              | `/checkout`, `/checkout/pay`, `/orders/[number]`, `/track-order`              |
-| Sign in / register / password reset / verify email | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` |
-| Account                                            | `/account`, `/account/orders`, `/account/profile`, `/account/addresses`       |
-| Content                                            | `/size-guide`, `/faq`, `/about`, `/contact`, `/policies/[slug]`               |
+| Page                                               | Route                                                                                        |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Home                                               | `/`                                                                                          |
+| Shop / category / collection / search              | `/shop`, `/categories/[slug]`, `/collections/[slug]`, `/search?q=`                           |
+| Product                                            | `/products/[slug]`                                                                           |
+| Cart                                               | `/cart` (plus the slide-out cart drawer on every page)                                       |
+| Checkout / payment / order / tracking              | `/checkout`, `/checkout/pay`, `/orders/[number]`, `/track-order`                             |
+| Sign in / register / password reset / verify email | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`                |
+| Account                                            | `/account`, `/account/orders`, `/account/wishlist`, `/account/profile`, `/account/addresses` |
+| Email preferences                                  | `/unsubscribe` (from links in emails)                                                        |
+| Content                                            | `/size-guide`, `/faq`, `/about`, `/contact`, `/policies/[slug]`                              |
 
 How it is built:
 
@@ -118,7 +120,17 @@ How it is built:
 - **Filters live in the URL** (`/shop?size=M&color=Navy&sort=price_asc`), so filtered pages can be shared and indexed. Controls update instantly while results load.
 - **The session and cart are client-side** (TanStack Query) and talk to the API with cookies. An expired session is refreshed automatically.
 - **Forms use the same Zod schemas as the API** (`@hoodie/validation`), and API field errors appear next to the right field.
-- **SEO:** per-page metadata, Product and FAQ JSON-LD, `sitemap.xml`, `robots.txt`, and real 404 status codes for missing products, categories and pages.
+- **SEO:** per-page metadata, Product and FAQ JSON-LD (with review ratings), `sitemap.xml`, `robots.txt`, and real 404 status codes for missing products, categories and pages.
+
+Engagement features (Phase 5):
+
+- **Search** opens from the header with suggestions as you type (products and categories, keyboard navigable). It tolerates typos ("hodie", "sherpaa") using PostgreSQL trigram matching, and full results sort by best match.
+- **Reviews** on product pages: rating summary with a filter per star rating, sorting, and a form for customers whose order containing the product was delivered. Reviews appear after staff publish them (or straight away if auto-publish is on). Product cards show the average rating.
+- **Wishlist:** a heart on every product card and product page; saved items at `/account/wishlist`. Guests are asked to sign in.
+- **Recently viewed** products are remembered on the device (localStorage) and shown on product pages and the home page.
+- **Returns:** on a delivered order, within the return window (14 days by default), customers choose items and a reason; the order page then shows each return's progress.
+- **Google sign-in** appears on the login and register pages once `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set on the API.
+- **"You may also like"** shows products often bought together first, then best sellers from the same category.
 
 ### End-to-end tests
 
@@ -127,7 +139,7 @@ pnpm build      # all apps must be built
 pnpm e2e        # starts the API, storefront and admin if they aren't running, then runs Playwright
 ```
 
-There are 29 tests on desktop, mobile (Pixel 7) and the admin panel. They cover browsing, filters, sorting, search, the size guide, the cart, sold-out and low-stock states, registering with a guest cart, addresses, signing out and in, the mobile menu and filters, checkout (Cash on Delivery, demo card payments with a decline then success, coupons, saved addresses, tracking and cancelling), and the admin (sign-in and access rules, fulfilling and refunding orders, creating a product with variants and stock, coupons, the dashboard). They run against the database in `apps/api/.env`, create uniquely named `@test.local` users, and sign in to the admin with `SEED_ADMIN_PASSWORD` (or `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`). If the API is already running, start it with `RATE_LIMIT_ENABLED=false`, because the tests sign in more than five times a minute.
+There are 35 tests on desktop, mobile (Pixel 7) and the admin panel. They cover browsing, filters, sorting, search (including suggestions with a typo), the size guide, the cart, sold-out and low-stock states, registering with a guest cart, addresses, signing out and in, the mobile menu and filters, checkout (Cash on Delivery, demo card payments with a decline then success, coupons, saved addresses, tracking and cancelling), wishlist, recently viewed, reviews, returns, unsubscribe links, and the admin (sign-in and access rules, fulfilling and refunding orders, creating a product with variants and stock, coupons, the dashboard, publishing a review, and a return from approval to refund). They run against the database in `apps/api/.env`, create uniquely named `@test.local` users, and sign in to the admin with `SEED_ADMIN_PASSWORD` (or `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`). If the API is already running, start it with `RATE_LIMIT_ENABLED=false`, because the tests sign in more than five times a minute.
 
 ## Admin panel
 
@@ -154,9 +166,27 @@ http://localhost:3001 (staff accounts only; customer accounts are refused).
 
 **Refunds.** Card payments are refunded through Stripe (or the demo provider). Cash on Delivery refunds are recorded for staff to pay back. A full refund marks the order Refunded and, if it hadn't shipped, puts the items back in stock: this is how a paid card order is cancelled. Two staff can't refund the same money twice.
 
-**New orders** show as a badge and a pop-up within 30 seconds (the admin polls `GET /admin/notifications`).
+**Returns** (`/returns`): approve (the customer is emailed the store address), mark the parcel received (restocking by default), then a manager refunds the items' value. Declining sends the customer your reason. **Reviews** (`/reviews`): publish, hide, reply publicly or delete. **Newsletter** (`/newsletter`): subscribers with CSV export for your email tool.
+
+**New orders** show as a badge and a pop-up within 30 seconds (the admin polls `GET /admin/notifications`), alongside counts of returns and reviews waiting.
 
 **Image uploads** go straight to Cloudinary when its keys are set. Without them (development), images are saved to `apps/api/uploads` and served by the API. In production, use Cloudinary or set `LOCAL_UPLOADS=true` with a persistent disk.
+
+## Background jobs and emails
+
+With `REDIS_URL` set, the API runs a **BullMQ** worker. Emails are queued and retried with backoff (about two hours of attempts), and these jobs run on a schedule:
+
+| Job                  | When                  | What it does                                                                                                         |
+| -------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Expire unpaid orders | Every minute          | Releases stock held by card orders not paid within 15 minutes                                                        |
+| Cart reminders       | Every 15 minutes      | Emails signed-in customers who left items in their cart: after 1 hour, then after 1 day. Any cart change restarts it |
+| Daily summary        | 08:00 store time      | Yesterday's sales and what needs attention, to managers and Super Admins (switch off in Store settings)              |
+| Back-in-stock        | When stock goes up    | Emails everyone who asked to be told about that size and colour, once                                                |
+| Review request       | 7 days after delivery | "How's your hoodie?" with links to review what they haven't reviewed yet                                             |
+
+Every marketing email (newsletter welcome, cart reminders) has a signed unsubscribe link; the storefront asks for a click before unsubscribing, because some email scanners open every link. Order emails are always sent.
+
+The worker runs inside the API by default. To run it separately, set `RUN_WORKER=false` on the API servers and start `node apps/api/dist/worker.js`. **Without Redis** the recurring jobs run on simple timers inside the API, emails are sent straight away, and the daily summary and review-request emails are skipped.
 
 ## Checkout and payments
 
@@ -189,18 +219,18 @@ Use any future expiry date and any CVC. Demo mode is **off in production** unles
 
 Interactive docs are at **`/api/docs`**, and the raw OpenAPI 3.1 spec at `/api/docs/openapi.json`. The spec is generated from the route definitions, so it stays in sync with the code.
 
-| Area                | Endpoints                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth                | `POST /auth/register`, `/login`, `/refresh`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password` · `PATCH /auth/password` · `GET /auth/me`, `/auth/session`                                                                                                                                                                                                                                                                                                           |
-| Account             | `PATCH /me` · `GET/POST /me/addresses` · `PUT/DELETE /me/addresses/:id`                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Catalog             | `GET /products` (filters, search, sort, pages) · `/products/:slug` · `/products/:slug/related` · `/categories[/:slug]` · `/collections[/:slug]` · `/filters`                                                                                                                                                                                                                                                                                                                                                |
-| Cart                | `GET/DELETE /cart` · `POST /cart/items` · `PATCH/DELETE /cart/items/:id`                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Content             | `GET /cms/home`, `/cms/pages/:slug`, `/cms/faq` · `POST /contact`, `/newsletter`, `/stock-alerts`                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Checkout & orders   | `POST /cart/coupon` · `POST /checkout/quote`, `/checkout` · `GET /orders/track`, `/orders/:number`, `/orders/:number/payment`, `/orders/:number/invoice` · `POST /orders/:number/cancel` · `GET /me/orders`                                                                                                                                                                                                                                                                                                 |
-| Payments            | `POST /payments/stripe/webhook` · `POST /payments/demo/confirm` (demo mode)                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Admin (Support+)    | `GET /admin/dashboard`, `/admin/notifications` · `/admin/orders` (list, `/export` CSV, `/:number`, `PATCH /:number`, `/:number/status`, `/:number/invoice`, `/:number/packing-slip`) · `/admin/customers` · `/admin/messages` (+ `/reply`)                                                                                                                                                                                                                                                                  |
-| Admin (Manager+)    | `/admin/products` CRUD + `/bulk` + `/variants/generate` · `/admin/variants/:id` + `/adjust-stock` · `/admin/inventory` (+ `/:variantId/history`) · `/admin/categories` · `/admin/collections` · `/admin/coupons` · `/admin/shipping-zones` · `/admin/banners`, `/pages`, `/faq`, `/announcement` · `/admin/reports/sales`, `/products`, `/categories`, `/inventory` (`?format=csv`) · `POST /admin/orders/:number/refund` · `PATCH /admin/customers/:id/block` · `/admin/uploads/config`, `/sign`, `/local` |
-| Admin (Super Admin) | `/admin/staff` (+ `/:id/resend-invite`) · `GET/PATCH /admin/settings` · `/admin/audit-log` (+ `/entities`)                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Area                | Endpoints                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth                | `POST /auth/register`, `/login`, `/refresh`, `/logout`, `/verify-email`, `/resend-verification`, `/forgot-password`, `/reset-password` · `PATCH /auth/password` · `GET /auth/me`, `/auth/session`, `/auth/providers`, `/auth/google` (+ `/callback`)                                                                                                                                                                                                                                                                                                           |
+| Account             | `PATCH /me` · `GET/POST /me/addresses` · `PUT/DELETE /me/addresses/:id` · `GET /me/wishlist` (+ `/ids`) · `PUT/DELETE /me/wishlist/:productId`                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Catalog             | `GET /products` (filters, search with `sort=relevance`, `slugs=` for recently viewed, pages) · `/products/:slug` · `/products/:slug/related` · `/search/suggest` · `/categories[/:slug]` · `/collections[/:slug]` · `/filters` · `GET/PUT/DELETE /products/:slug/reviews` (+ `/eligibility`)                                                                                                                                                                                                                                                                   |
+| Cart                | `GET/DELETE /cart` · `POST /cart/items` · `PATCH/DELETE /cart/items/:id`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Content             | `GET /cms/home`, `/cms/pages/:slug`, `/cms/faq` · `POST /contact`, `/newsletter`, `/stock-alerts`, `/email-preferences/unsubscribe`                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Checkout & orders   | `POST /cart/coupon` · `POST /checkout/quote`, `/checkout` · `GET /orders/track`, `/orders/:number`, `/orders/:number/payment`, `/orders/:number/invoice` · `POST /orders/:number/cancel`, `/orders/:number/returns` · `GET /me/orders`                                                                                                                                                                                                                                                                                                                         |
+| Payments            | `POST /payments/stripe/webhook` · `POST /payments/demo/confirm` (demo mode)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Admin (Support+)    | `GET /admin/dashboard`, `/admin/notifications` · `/admin/orders` (list, `/export` CSV, `/:number`, `PATCH /:number`, `/:number/status`, `/:number/invoice`, `/:number/packing-slip`) · `/admin/customers` · `/admin/messages` (+ `/reply`) · `/admin/returns` (+ `/:id/approve`, `/reject`, `/receive`) · `/admin/reviews`                                                                                                                                                                                                                                     |
+| Admin (Manager+)    | `/admin/products` CRUD + `/bulk` + `/variants/generate` · `/admin/variants/:id` + `/adjust-stock` · `/admin/inventory` (+ `/:variantId/history`) · `/admin/categories` · `/admin/collections` · `/admin/coupons` · `/admin/shipping-zones` · `/admin/banners`, `/pages`, `/faq`, `/announcement` · `/admin/reports/sales`, `/products`, `/categories`, `/inventory` (`?format=csv`) · `POST /admin/orders/:number/refund`, `/admin/returns/:id/refund` · `PATCH /admin/customers/:id/block` · `/admin/newsletter` · `/admin/uploads/config`, `/sign`, `/local` |
+| Admin (Super Admin) | `/admin/staff` (+ `/:id/resend-invite`) · `GET/PATCH /admin/settings` · `/admin/audit-log` (+ `/entities`)                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 ### How auth works (for the frontends)
 
@@ -211,6 +241,7 @@ Interactive docs are at **`/api/docs`**, and the raw OpenAPI 3.1 spec at `/api/d
 - **Roles:** `CUSTOMER` < `SUPPORT` < `MANAGER` < `SUPER_ADMIN`. Changing a role or blocking a user takes effect on their next request.
 - **CSRF:** cookies are `SameSite=Lax`, and writes from browser origins outside `CORS_ORIGINS` are rejected.
 - **Rate limits** (per IP): login 5/min, register 10/hour, password reset 5 per 15 min, everything else 300/min. They are stored in Redis when `REDIS_URL` is set, so limits hold across multiple API servers.
+- **Google sign-in** (when configured) links to an existing account only if Google has verified the email; otherwise the customer must sign in with their password.
 - **Emails** (verification, password reset) are printed to the API log in development. Set `RESEND_API_KEY` to send real ones.
 
 ### Tests

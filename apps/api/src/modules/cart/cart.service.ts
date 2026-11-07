@@ -248,7 +248,11 @@ export async function addItem(
     create: { cartId: cart.id, variantId, quantity },
     update: { quantity: { increment: quantity } },
   });
-  await prisma.cart.update({ where: { id: cart.id }, data: { updatedAt: new Date() } });
+  // Any change restarts the abandoned-cart clock.
+  await prisma.cart.update({
+    where: { id: cart.id },
+    data: { updatedAt: new Date(), remindersSent: 0, lastReminderAt: null },
+  });
 
   return {
     cart: await getCart(owner.userId ? owner : { guestToken: cart.token ?? undefined }),

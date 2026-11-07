@@ -392,6 +392,48 @@ export const settings: Record<string, unknown> = {
   "payments.cod.enabled": true,
   "orders.numberPrefix": "HD-",
   "returns.windowDays": 14,
+  "reviews.autoApprove": false,
+  "notifications.dailyDigest": true,
   "announcement.text": "Free shipping on orders over Rs 5,000 in Lahore, Karachi & Islamabad",
   "announcement.enabled": true,
+};
+
+/** Demo reviews by product slug (development only). */
+export const demoReviews: Record<string, { rating: number; title: string; body: string }[]> = {
+  "classic-pullover-hoodie": [
+    {
+      rating: 5,
+      title: "My go-to hoodie",
+      body: "Thick, soft inside and the hood actually keeps its shape. True to size; I'm 5'10\" and the M fits perfectly.",
+    },
+    {
+      rating: 4,
+      title: "Great, slightly long sleeves",
+      body: "Really comfortable and warm for Lahore winters. Sleeves run a bit long but nothing a cuff can't fix.",
+    },
+    {
+      rating: 5,
+      title: "Survived ten washes",
+      body: "Washed it inside out on cold as suggested and it still looks new. No pilling so far.",
+    },
+  ],
+  "oversized-heavyweight-hoodie": [
+    {
+      rating: 5,
+      title: "Proper heavyweight",
+      body: "Exactly the boxy oversized fit I wanted. Size down if you want it less roomy.",
+    },
+    {
+      rating: 3,
+      title: "Nice but very big",
+      body: "Quality is good but even the S is huge on me. Would have liked a size guide note about that.",
+    },
+  ],
+  "essential-zip-up-hoodie": [
+    {
+      rating: 4,
+      title: "Smooth zip",
+      body: "The zip is solid metal and doesn't snag. Good everyday layer, a little thinner than the pullover.",
+    },
+  ],
 };

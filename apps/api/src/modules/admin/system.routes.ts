@@ -171,6 +171,8 @@ const SETTINGS_DEFAULTS: StoreSettingsDTO = {
   "payments.card.enabled": true,
   "payments.cod.enabled": true,
   "returns.windowDays": 14,
+  "reviews.autoApprove": false,
+  "notifications.dailyDigest": true,
 };
 
 async function settingsResponse(): Promise<StoreSettingsResponseDTO> {

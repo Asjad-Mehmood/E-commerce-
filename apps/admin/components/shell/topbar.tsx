@@ -83,7 +83,13 @@ export function Topbar({
   const router = useRouter();
   const logout = useLogout();
   const [q, setQ] = useState("");
-  const total = (counts?.toFulfil ?? 0) + (counts?.newMessages ?? 0) + (counts?.lowStock ?? 0);
+  const isManagerRole = user.role !== "SUPPORT";
+  const total =
+    (counts?.toFulfil ?? 0) +
+    (counts?.newMessages ?? 0) +
+    (counts?.pendingReturns ?? 0) +
+    (counts?.pendingReviews ?? 0) +
+    (isManagerRole ? (counts?.lowStock ?? 0) : 0);
   const isManager = user.role !== "SUPPORT";
 
   const alerts = [
@@ -94,6 +100,13 @@ export function Topbar({
       show: true,
     },
     { n: counts?.newMessages ?? 0, text: "new messages", href: "/messages?status=NEW", show: true },
+    {
+      n: counts?.pendingReturns ?? 0,
+      text: "return requests",
+      href: "/returns?status=REQUESTED",
+      show: true,
+    },
+    { n: counts?.pendingReviews ?? 0, text: "reviews to moderate", href: "/reviews", show: true },
     {
       n: counts?.lowStock ?? 0,
       text: "variants low on stock",

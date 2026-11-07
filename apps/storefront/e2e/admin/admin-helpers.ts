@@ -60,3 +60,48 @@ export async function placeOrder(request: APIRequestContext, method: "COD" | "ST
   }
   return { number: order.orderNumber, email };
 }
+
+/**
+ * A signed-in customer (API request context) with a delivered Cash on Delivery
+ * order, ready for reviews and returns.
+ */
+export async function customerWithDeliveredOrder(playwright: {
+  request: { newContext: () => Promise<APIRequestContext> };
+}) {
+  const customer = await playwright.request.newContext();
+  const email = uniqueEmail();
+  const password = "Customer123";
+  const reg = await customer.post(`${API}/auth/register`, {
+    data: { name: "Review Tester", email, password },
+  });
+  expect(reg.status()).toBe(201);
+
+  // A seeded product: other tests create and archive their own products in parallel.
+  const slug = "classic-pullover-hoodie";
+  const detail = (await (await customer.get(`${API}/products/${slug}`)).json()).data;
+  const title = detail.title as string;
+  const variant = (detail.variants as { id: string; stockStatus: string }[]).find(
+    (v) => v.stockStatus !== "out_of_stock",
+  )!;
+  await customer.post(`${API}/cart/items`, { data: { variantId: variant.id, quantity: 1 } });
+  const res = await customer.post(`${API}/checkout`, {
+    data: {
+      email,
+      phone: address.phone,
+      shippingAddress: address,
+      shippingMethod: "standard",
+      paymentMethod: "COD",
+      idempotencyKey: randomUUID(),
+    },
+  });
+  expect(res.status()).toBe(201);
+  const number = (await res.json()).data.orderNumber as string;
+
+  const staff = await playwright.request.newContext();
+  await staff.post(`${API}/auth/login`, { data: ADMIN });
+  for (const status of ["PROCESSING", "SHIPPED", "DELIVERED"]) {
+    const r = await staff.patch(`${API}/admin/orders/${number}/status`, { data: { status } });
+    expect(r.ok()).toBeTruthy();
+  }
+  return { customer, staff, email, password, number, slug, title };
+}

@@ -7,8 +7,16 @@ const esc = (s: string) =>
   );
 export { esc };
 
-/** Shared HTML shell for transactional emails. `body` must already be escaped HTML. */
-export function emailLayout(title: string, body: string, cta?: { label: string; url: string }) {
+/**
+ * Shared HTML shell for transactional emails. `body` and `footer` must already
+ * be escaped HTML; `footer` is small print such as an unsubscribe link.
+ */
+export function emailLayout(
+  title: string,
+  body: string,
+  cta?: { label: string; url: string },
+  footer?: string,
+) {
   return `<!doctype html><html><body style="font-family:system-ui,sans-serif;background:#f6f6f7;padding:24px;color:#111">
 <table role="presentation" style="max-width:560px;margin:auto;background:#fff;border-radius:12px;padding:32px;width:100%">
 <tr><td>
@@ -21,5 +29,6 @@ ${
 <p style="color:#888;font-size:12px">If the button does not work, paste this link into your browser:<br>${esc(cta.url)}</p>`
     : ""
 }
+${footer ? `<p style="color:#888;font-size:12px;margin-top:24px">${footer}</p>` : ""}
 </td></tr></table></body></html>`;
 }

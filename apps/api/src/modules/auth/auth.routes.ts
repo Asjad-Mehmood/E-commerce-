@@ -6,13 +6,37 @@ import {
   resetPasswordSchema,
   verifyEmailSchema,
 } from "@hoodie/validation";
-import type { Request, Response } from "express";
+import type { AuthProvidersDTO } from "@hoodie/types";
+import type { CookieOptions, Request, Response } from "express";
+import { z } from "zod";
+import { env } from "../../config/env";
 import { clearAuthCookies, clearCartCookie, COOKIE, setAuthCookies } from "../../lib/cookies";
 import { ok } from "../../lib/http";
 import { defineRoutes, route } from "../../lib/route";
 import { currentUser } from "../../middleware/auth";
 import { mergeGuestCart } from "../cart/cart.service";
+import { AppError } from "../../utils/app-error";
 import * as auth from "./auth.service";
+import { authorizationRequest, googleClient, googleEnabled } from "./google";
+
+const GOOGLE_COOKIE = "oauth_google";
+const oauthCookie = (): CookieOptions => ({
+  httpOnly: true,
+  secure: env.COOKIE_SECURE,
+  sameSite: "lax",
+  path: "/api/v1/auth/google",
+});
+/** Only same-site paths, so the redirect can't send people to another website. */
+const safeNext = (next?: string) =>
+  next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")
+    ? next
+    : "/account";
+const googleStartQuery = z.object({ next: z.string().max(300).optional() });
+const googleCallbackQuery = z.object({
+  code: z.string().max(2000).optional(),
+  state: z.string().max(200).optional(),
+  error: z.string().max(200).optional(),
+});
 
 const client = (req: Request): auth.ClientInfo => ({
   userAgent: req.get("user-agent"),
@@ -160,6 +184,73 @@ export const authRouter = defineRoutes("/auth", "Auth", [
     body: resetPasswordSchema,
     handler: async ({ body }) => {
       await auth.resetPassword(body);
+    },
+  }),
+  route({
+    method: "get",
+    path: "/providers",
+    summary: "Which sign-in methods are available (Google needs keys on the server)",
+    access: "public",
+    handler: () => ok<AuthProvidersDTO>({ google: googleEnabled() }),
+  }),
+  route({
+    method: "get",
+    path: "/google",
+    summary: "Start signing in with Google (browser redirect)",
+    description:
+      "Redirects to Google. `next` is a storefront path to return to afterwards. 404 unless GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set.",
+    access: "public",
+    rateLimit: "login",
+    query: googleStartQuery,
+    handler: ({ res, query }) => {
+      if (!googleEnabled()) throw AppError.notFound("Google sign-in");
+      const request = authorizationRequest();
+      res.cookie(
+        GOOGLE_COOKIE,
+        JSON.stringify({
+          state: request.state,
+          verifier: request.verifier,
+          next: safeNext(query.next),
+        }),
+        { ...oauthCookie(), maxAge: 10 * 60 * 1000 },
+      );
+      res.redirect(302, request.url);
+    },
+  }),
+  route({
+    method: "get",
+    path: "/google/callback",
+    summary: "Google redirects here after sign-in (browser redirect to the storefront)",
+    access: "public",
+    rateLimit: "login",
+    query: googleCallbackQuery,
+    handler: async ({ req, res, query }) => {
+      const fail = (reason: string) =>
+        res.redirect(302, `${env.STOREFRONT_URL}/login?error=${encodeURIComponent(reason)}`);
+      const raw = cookies(req)[GOOGLE_COOKIE];
+      res.clearCookie(GOOGLE_COOKIE, oauthCookie());
+      if (!googleEnabled()) return fail("google");
+
+      let saved: { state: string; verifier: string; next: string } | null = null;
+      try {
+        saved = raw ? JSON.parse(raw) : null;
+      } catch {
+        saved = null;
+      }
+      if (!saved || !query.state || query.state !== saved.state || !query.code) {
+        return fail(query.error === "access_denied" ? "google_cancelled" : "google");
+      }
+      try {
+        const idToken = await googleClient.exchangeCode(query.code, saved.verifier);
+        const profile = await googleClient.verifyIdToken(idToken);
+        await startSession(req, res, await auth.loginWithGoogle(profile, client(req)));
+        res.redirect(302, `${env.STOREFRONT_URL}${safeNext(saved.next)}`);
+      } catch (err) {
+        if (err instanceof AppError && err.code === "ACCOUNT_BLOCKED") return fail("blocked");
+        if (err instanceof AppError && err.code === "CONFLICT") return fail("google_exists");
+        req.log?.warn({ err }, "Google sign-in failed");
+        return fail("google");
+      }
     },
   }),
 ]);

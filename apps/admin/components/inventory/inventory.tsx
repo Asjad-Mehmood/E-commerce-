@@ -88,6 +88,9 @@ export function Inventory() {
             <Th className="text-right">Held</Th>
             <Th>Available</Th>
             <Th className="text-right">Alert at</Th>
+            <Th className="text-right" title="Shoppers waiting for a back-in-stock email">
+              Waiting
+            </Th>
             <Th>
               <span className="sr-only">Actions</span>
             </Th>
@@ -95,9 +98,9 @@ export function Inventory() {
         </thead>
         <tbody>
           {rows.isPending ? (
-            <LoadingRows cols={9} />
+            <LoadingRows cols={10} />
           ) : rows.data?.data.length === 0 ? (
-            <TableMessage cols={9}>Nothing matches these filters.</TableMessage>
+            <TableMessage cols={10}>Nothing matches these filters.</TableMessage>
           ) : (
             rows.data?.data.map((r) => (
               <Tr key={r.variantId} className={r.isActive ? undefined : "opacity-60"}>
@@ -136,6 +139,13 @@ export function Inventory() {
                   <StockBadge available={r.available} lowStockAt={r.lowStockAt} />
                 </Td>
                 <Td className="text-muted text-right tabular-nums">{r.lowStockAt}</Td>
+                <Td className="text-right tabular-nums">
+                  {r.waiting ? (
+                    <span title="Emailed automatically when you add stock">{r.waiting}</span>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </Td>
                 <Td className="text-right">
                   <Button
                     size="sm"

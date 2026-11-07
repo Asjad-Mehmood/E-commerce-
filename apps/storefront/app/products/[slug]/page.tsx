@@ -5,6 +5,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductGrid } from "@/components/product/product-card";
 import { ProductView } from "@/components/product/product-view";
+import { RecentlyViewed } from "@/components/product/recently-viewed";
+import { Reviews } from "@/components/product/reviews";
 import { Breadcrumbs } from "@/components/shop/product-listing";
 import { siteConfig } from "@/lib/config";
 import { getData, getDataSafe } from "@/lib/server-api";
@@ -125,6 +127,7 @@ export default async function ProductPage({ params }: Props) {
       />
       <ProductView product={product} />
       <Details product={product} />
+      <Reviews slug={product.slug} />
 
       {related.length > 0 && (
         <section className="mt-20">
@@ -132,6 +135,7 @@ export default async function ProductPage({ params }: Props) {
           <ProductGrid products={related.slice(0, 4)} />
         </section>
       )}
+      <RecentlyViewed current={product.slug} />
     </Container>
   );
 }
