@@ -59,6 +59,10 @@ function instances. Without it each instance keeps its own.
    overwrite what you change in the admin;
 4. builds the site.
 
+Only **production** deploys (from `main`) change the database. Preview deploys
+of other branches just build the site, so an unmerged change can never migrate
+or seed the live store.
+
 Check `https://<your-site>/api/v1/health` shows `"status":"ok"`.
 
 ## 5. After the first deploy
