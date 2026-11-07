@@ -109,6 +109,9 @@ jobs:
 
       - name: Migrate and seed
         run: |
+          # Generate the Prisma client first: the seed imports it, and nothing
+          # else in this job has generated it yet (lint/typecheck do in "check").
+          pnpm --filter @hoodie/api db:generate
           pnpm db:deploy
           pnpm db:seed
 
