@@ -37,3 +37,6 @@ Thumbs.db
 
 # Locally stored uploads (development)
 apps/api/uploads/
+
+# Redis snapshots
+*.rdb
