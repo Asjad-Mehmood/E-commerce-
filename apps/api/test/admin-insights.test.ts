@@ -127,9 +127,13 @@ describe("reports", () => {
 
   it("groups net sales by local day, counting refunds against the order", async () => {
     const { agent } = await signedInAgent("MANAGER");
-    // 23:30 on the 14th in Karachi is still the 14th locally (18:30 UTC).
-    await orderAt(new Date(`${day}T18:30:00Z`), 320000);
-    await orderAt(new Date(`${day}T05:00:00Z`), 220000, 50000);
+    // Local Karachi times, computed with the app's helper: Pakistan used daylight
+    // saving in some years (e.g. 2008-2009), so fixed UTC offsets would be wrong.
+    const zone = "Asia/Karachi";
+    const local = (d: string, hours: number) =>
+      new Date(startOfDay(d, zone).getTime() + hours * 3600_000);
+    await orderAt(local(day, 23.5), 320000); // 23:30 on the 14th is still the 14th
+    await orderAt(local(day, 10), 220000, 50000);
 
     const res = await agent.get(
       `/api/v1/admin/reports/sales?from=${addDays(day, -1)}&to=${addDays(day, 1)}`,
@@ -162,7 +166,10 @@ describe("reports", () => {
 
   it("downloads CSV and ranks products", async () => {
     const { agent } = await signedInAgent("MANAGER");
-    const { product } = await orderAt(new Date(`${year}-08-03T10:00:00Z`), 520000);
+    const { product } = await orderAt(
+      new Date(startOfDay(`${year}-08-03`, "Asia/Karachi").getTime() + 12 * 3600_000),
+      520000,
+    );
 
     const csv = await agent.get(
       `/api/v1/admin/reports/sales?from=${year}-08-03&to=${year}-08-03&format=csv`,
