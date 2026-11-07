@@ -21,4 +21,6 @@ export async function setCardPayments(enabled: boolean) {
   }
 }
 
-export default () => setCardPayments(true);
+export default async function setup() {
+  await setCardPayments(true);
+}

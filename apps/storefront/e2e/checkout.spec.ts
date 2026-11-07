@@ -34,7 +34,8 @@ test("guest Cash on Delivery checkout, then track and cancel the order", async (
 
   await expect(page).toHaveURL(/\/orders\/US-\d+\?token=.+&placed=1/);
   await expect(page.getByRole("heading", { name: "Your order is confirmed" })).toBeVisible();
-  await expect(page.getByText(email)).toBeVisible();
+  // Email isn't set up in the e2e store, so the page says to bookmark it instead.
+  await expect(page.getByText(/Bookmark this page to follow your order/)).toBeVisible();
   const number = (await page.getByRole("heading", { name: /^Order US-/ }).textContent())!.replace(
     "Order ",
     "",

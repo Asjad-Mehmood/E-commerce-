@@ -20,8 +20,12 @@ async function get<T>(
   { revalidate = 60, tags }: FetchOptions = {},
 ): Promise<T | null> {
   await connection();
-  const res = await fetch(`${serverApiUrl}${path}`, {
-    headers: { Accept: "application/json" },
+  const res = await fetch(`${serverApiUrl()}${path}`, {
+    headers: {
+      Accept: "application/json",
+      // Lets the API tell this server's own requests from shoppers' (no rate limit).
+      ...(process.env.PROXY_SECRET ? { "x-proxy-secret": process.env.PROXY_SECRET } : {}),
+    },
     next: { revalidate, tags },
   });
   if (res.status === 404) return null;

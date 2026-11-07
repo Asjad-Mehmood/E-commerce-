@@ -22,6 +22,7 @@
     "@hoodie/types": "workspace:*",
     "@hoodie/validation": "workspace:*",
     "@prisma/client": "6.19.3",
+    "@vercel/functions": "^3.11.0",
     "argon2": "^0.45.2",
     "bullmq": "^5.81.5",
     "compression": "^1.8.1",

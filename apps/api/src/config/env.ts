@@ -17,15 +17,8 @@ const envSchema = z
       .default("info"),
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     REDIS_URL: z.string().optional(),
-    CORS_ORIGINS: z
-      .string()
-      .default("http://localhost:3000,http://localhost:3001")
-      .transform((v) =>
-        v
-          .split(",")
-          .map((o) => o.trim())
-          .filter(Boolean),
-      ),
+    /** Comma-separated browser origins allowed to call the API. Defaults to STOREFRONT_URL and ADMIN_URL. */
+    CORS_ORIGINS: z.string().optional(),
 
     // Auth
     JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
@@ -39,8 +32,16 @@ const envSchema = z
     // Links in emails
     STOREFRONT_URL: z.url().default("http://localhost:3000"),
     ADMIN_URL: z.url().default("http://localhost:3001"),
-    /** Public origin of this API (used in the URLs of uploaded images). */
-    API_PUBLIC_URL: z.url().default("http://localhost:4000"),
+    /** Public origin of this API (used in the URLs of uploaded images). On Vercel it defaults to the production domain. */
+    API_PUBLIC_URL: z.url().optional(),
+
+    // Hosting (Vercel)
+    /** Shared with the storefront and admin: they proxy /api/v1 and pass the shopper's IP with it. */
+    PROXY_SECRET: z.string().min(16, "PROXY_SECRET must be at least 16 characters").optional(),
+    /** Vercel sends it with scheduled (cron) requests; enables GET /api/v1/cron/daily. */
+    CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters").optional(),
+    /** Set by Vercel: the project's production domain, e.g. urbanstore-api.vercel.app. */
+    VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
 
     // Email is set up in the admin (Store settings → Email). RESEND_API_KEY here is
     // an optional server-side fallback. Until one of them is set, no email is sent.
@@ -73,6 +74,17 @@ const envSchema = z
   })
   .transform((e) => ({
     ...e,
+    CORS_ORIGINS: (e.CORS_ORIGINS ?? `${e.STOREFRONT_URL},${e.ADMIN_URL}`)
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean)
+      .map((o) => (URL.canParse(o) ? new URL(o).origin : o)),
+    API_PUBLIC_URL: (
+      e.API_PUBLIC_URL ??
+      (e.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${e.VERCEL_PROJECT_PRODUCTION_URL}`
+        : "http://localhost:4000")
+    ).replace(/\/$/, ""),
     // Secure cookies are always on in production.
     COOKIE_SECURE: e.NODE_ENV === "production" ? true : e.COOKIE_SECURE,
     // API docs default to on, except in production.

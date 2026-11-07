@@ -9,8 +9,17 @@ export const siteConfig = {
   currency: "PKR",
 };
 
-/** API URL used by server components (can be an internal address in production). */
-export const serverApiUrl = process.env.API_URL ?? siteConfig.apiUrl;
+/**
+ * API URL for server components: API_URL (the API's own address), or the
+ * public URL when that is absolute (development). Server-side only.
+ */
+export function serverApiUrl(): string {
+  const url = process.env.API_URL ?? siteConfig.apiUrl;
+  if (url.startsWith("/")) {
+    throw new Error("Set API_URL to the API's address, e.g. https://your-api.vercel.app/api/v1");
+  }
+  return url.replace(/\/+$/, "");
+}
 
 export const footerNav = {
   Shop: [

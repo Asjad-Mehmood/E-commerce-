@@ -10,7 +10,13 @@ import { randomToken } from "../../lib/crypto";
  */
 
 export const googleEnabled = () => !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
-export const googleRedirectUri = () => `${env.API_PUBLIC_URL}/api/v1/auth/google/callback`;
+/**
+ * Google sends the shopper back here. Behind the storefront's /api/v1 proxy
+ * (Vercel, PROXY_SECRET set) that is the storefront's address, so the login
+ * cookies are set on the storefront's domain.
+ */
+export const googleRedirectUri = () =>
+  `${env.PROXY_SECRET ? env.STOREFRONT_URL.replace(/\/$/, "") : env.API_PUBLIC_URL}/api/v1/auth/google/callback`;
 
 export interface GoogleProfile {
   sub: string;

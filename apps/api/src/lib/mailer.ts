@@ -1,6 +1,7 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { isTest } from "../config/env";
 import { queue } from "../jobs/queue";
+import { background } from "./background";
 import { loadEmailConfig, type EmailConfig } from "./email-config";
 import { logger } from "./logger";
 
@@ -83,9 +84,14 @@ export async function deliverMail(mail: Mail): Promise<boolean> {
  * Sends a transactional email. Never throws: a failed email must not fail the
  * request that triggered it. Nothing is sent until email is configured in
  * Store settings → Email. With Redis the email is queued and retried with
- * backoff; otherwise it is sent straight away.
+ * backoff; otherwise it is sent straight away (and on Vercel the function
+ * stays alive until it has gone).
  */
-export async function sendMail(mail: Mail): Promise<void> {
+export function sendMail(mail: Mail): Promise<void> {
+  return background(send(mail));
+}
+
+async function send(mail: Mail): Promise<void> {
   try {
     if (!isTest && !(await loadEmailConfig())) {
       logger.info({ to: mail.to, subject: mail.subject }, "Email not sent: email isn't set up yet");

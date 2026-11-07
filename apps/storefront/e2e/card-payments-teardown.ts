@@ -1,3 +1,5 @@
 import { setCardPayments } from "./card-payments";
 
-export default () => setCardPayments(false);
+export default async function teardown() {
+  await setCardPayments(false);
+}

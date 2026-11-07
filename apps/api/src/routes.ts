@@ -33,6 +33,7 @@ import { myOrdersRouter, ordersRouter } from "./modules/orders/orders.routes";
 import { paymentsRouter } from "./modules/payments/payments.routes";
 import { searchRouter } from "./modules/catalog/search.routes";
 import { mediaRouter } from "./modules/media/media.routes";
+import { cronRouter } from "./modules/cron/cron.routes";
 import {
   adminNewsletterRouter,
   emailPreferencesRouter,
@@ -51,6 +52,7 @@ apiRouter.use("/products", productsRouter);
 apiRouter.use("/products", productReviewsRouter);
 apiRouter.use("/search", searchRouter);
 apiRouter.use("/media", mediaRouter);
+apiRouter.use("/cron", cronRouter);
 apiRouter.use("/categories", categoriesRouter);
 apiRouter.use("/collections", collectionsRouter);
 apiRouter.use("/filters", filtersRouter);

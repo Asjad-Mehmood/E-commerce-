@@ -21,9 +21,15 @@ export const QUEUE_NAME = "hoodie";
 export const bullConnection = () =>
   new Redis(env.REDIS_URL!, { maxRetriesPerRequest: null, enableReadyCheck: false });
 
-/** The queue, or null when Redis is not configured (and always in tests): jobs then run inline. */
+/**
+ * The queue, or null when Redis is not configured, in tests, and on Vercel
+ * (no long-running worker there): jobs then run inline, and scheduled jobs
+ * run from the daily cron request (GET /api/v1/cron/daily).
+ */
 export const queue: Queue | null =
-  env.REDIS_URL && !isTest ? new Queue(QUEUE_NAME, { connection: bullConnection() }) : null;
+  env.REDIS_URL && !isTest && !process.env.VERCEL
+    ? new Queue(QUEUE_NAME, { connection: bullConnection() })
+    : null;
 
 queue?.on("error", (err) => logger.warn({ err: err.message }, "Job queue error"));
 
