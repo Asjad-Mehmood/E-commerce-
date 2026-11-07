@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "echo 'This repository holds three Vercel projects. Set this project'\"'\"'s Root Directory (Settings > Build and Deployment) to apps/storefront, apps/admin or apps/api, then redeploy. See DEPLOYMENT.md.' && exit 1",
+  "installCommand": "echo 'Skipping install: Root Directory is not set.'"
+}
