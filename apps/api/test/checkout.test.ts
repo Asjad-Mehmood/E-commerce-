@@ -158,7 +158,7 @@ describe("Cash on Delivery checkout", () => {
     expect(res.status).toBe(201);
     const result = res.body.data;
     expect(result).toMatchObject({ status: "CONFIRMED", total: 900000 + 0 + 5000, payment: null });
-    expect(result.orderNumber).toMatch(/^HD-\d{5,}$/);
+    expect(result.orderNumber).toMatch(/^US-\d{5,}$/);
 
     expect(await variantRow(v1!.id)).toMatchObject({ stock: 3, reserved: 0 });
     expect(await variantRow(v2!.id)).toMatchObject({ stock: 4, reserved: 0 });
