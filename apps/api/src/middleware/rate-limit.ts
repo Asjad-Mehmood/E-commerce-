@@ -44,7 +44,7 @@ export function createRateLimiters({
       ...overrides[name],
       standardHeaders: "draft-8",
       legacyHeaders: false,
-      // The storefront's own server-side rendering (see trusted-proxy.ts).
+      // The site's own server-side rendering (see internal-request.ts).
       skip: (_req, res) => res.locals.trustedServer === true,
       // Fail open: a Redis outage must not take the store offline.
       passOnStoreError: true,

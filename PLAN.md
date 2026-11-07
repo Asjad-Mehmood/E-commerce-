@@ -1054,7 +1054,9 @@ Estimated for 1–2 developers. Adjust to your team size.
 >   - New: proxy-forwarded IPs are trusted only with a shared secret, and the cron endpoint needs `CRON_SECRET`.
 > - **Analytics:** Vercel Web Analytics and Speed Insights. They use no cookies, so no consent banner is needed; the privacy policy says only essential cookies are used.
 >
-> Left for the store owner (see DEPLOYMENT.md): create the three Vercel projects and the Neon database, set the environment variables, add a custom domain, set real stock levels, and set up email in the admin. Neon keeps point-in-time restore for backups; Vercel provides logs and HTTPS.
+> The shop, the admin panel (`/admin`) and the API (`/api/v1`) were then merged into one Next.js app, so the store is a single Vercel project.
+>
+> Left for the store owner (see DEPLOYMENT.md): set up the Vercel project and the Neon database, set the environment variables, add a custom domain, set real stock levels, and set up email in the admin. Neon keeps point-in-time restore for backups; Vercel provides logs and HTTPS.
 
 - SEO (meta, JSON-LD, sitemap), performance tuning, accessibility audit.
 - Full E2E test suite, load testing, security review (OWASP checklist).

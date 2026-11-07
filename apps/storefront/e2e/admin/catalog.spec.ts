@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { API } from "../helpers";
-import { adminLogin } from "./admin-helpers";
+import { adminLogin, adminUrl } from "./admin-helpers";
 
 test("creates a product, generates variants, adjusts stock and publishes it", async ({
   page,
@@ -51,7 +51,7 @@ test("creates a product, generates variants, adjusts stock and publishes it", as
   // Archive it again so it doesn't linger in the shop.
   await page.getByRole("button", { name: "Archive product" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Archive" }).click();
-  await expect(page).toHaveURL("/products");
+  await expect(page).toHaveURL(adminUrl("/products"));
   expect((await request.get(`${API}/products/${slug}`)).status()).toBe(404);
 });
 

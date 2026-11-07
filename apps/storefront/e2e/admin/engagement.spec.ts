@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { API } from "../helpers";
-import { adminLogin, customerWithDeliveredOrder } from "./admin-helpers";
+import { adminLogin, customerWithDeliveredOrder, adminUrl } from "./admin-helpers";
 
 test("moderates a review and handles a return through to the refund", async ({
   page,
@@ -26,7 +26,7 @@ test("moderates a review and handles a return through to the refund", async ({
   expect(reviews.data.map((r: { title: string }) => r.title)).toContain("Admin e2e");
 
   // Approve → received (restock) → refund.
-  await page.goto("/returns?status=REQUESTED");
+  await page.goto(adminUrl("/returns?status=REQUESTED"));
   await page
     .getByRole("row", { name: new RegExp(number) })
     .getByRole("link")

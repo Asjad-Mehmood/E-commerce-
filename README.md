@@ -16,21 +16,22 @@
 
 ## Tech stack
 
-| Part                           | Tech                                                                                      |
-| ------------------------------ | ----------------------------------------------------------------------------------------- |
-| Storefront (`apps/storefront`) | Next.js 15 (App Router), React 19, Tailwind CSS 4                                         |
-| Admin (`apps/admin`)           | Next.js 15, React 19, Tailwind CSS 4                                                      |
-| API (`apps/api`)               | Node 22, Express 5, Prisma 6, PostgreSQL 16, Zod 4, Pino                                  |
-| Shared                         | `@hoodie/types`, `@hoodie/validation`, `@hoodie/ui`, `@hoodie/config`                     |
-| Tooling                        | pnpm workspaces, Turborepo, ESLint 9, Prettier, Vitest, Husky, commitlint, GitHub Actions |
+| Part                     | Tech                                                                                      |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| Site (`apps/storefront`) | Next.js 15 (App Router), React 19, Tailwind CSS 4: the shop, `/admin` and `/api/v1`       |
+| API (`apps/api`)         | Node 22, Express 5, Prisma 6, PostgreSQL 16, Zod 4, Pino                                  |
+| Shared                   | `@hoodie/types`, `@hoodie/validation`, `@hoodie/ui`, `@hoodie/config`                     |
+| Tooling                  | pnpm workspaces, Turborepo, ESLint 9, Prettier, Vitest, Husky, commitlint, GitHub Actions |
 
 ## Repository layout
 
 ```
 apps/
-  api/          Express REST API + Prisma schema, migrations and seed
-  storefront/   Customer website            → http://localhost:3000
-  admin/        Admin dashboard             → http://localhost:3001
+  storefront/   The site → http://localhost:3000
+    app/(shop)/          customer pages
+    app/admin/, admin/   admin panel (/admin) and its components
+    app/api/v1/          serves the API below at /api/v1
+  api/          Express REST API (served by the site) + Prisma schema, migrations, seed
 packages/
   config/       Shared tsconfig + ESLint presets
   types/        Shared enums, API response types, money helpers
@@ -55,15 +56,17 @@ pnpm env:init         # create .env files from the .env.example templates
 pnpm db:up            # start Postgres + Redis in Docker
 pnpm db:deploy        # apply database migrations
 pnpm db:seed          # load demo hoodies, admin user, shipping zones, pages...
-pnpm dev              # start the API, storefront and admin together
+pnpm dev              # start the site (shop, admin and API) at http://localhost:3000
 ```
 
-| App                | URL                                                     |
-| ------------------ | ------------------------------------------------------- |
-| Storefront         | http://localhost:3000                                   |
-| Admin              | http://localhost:3001                                   |
-| API                | http://localhost:4000/api/v1 (health: `/api/v1/health`) |
-| API docs (Swagger) | http://localhost:4000/api/docs                          |
+| Part               | URL                                                                         |
+| ------------------ | --------------------------------------------------------------------------- |
+| Shop               | http://localhost:3000                                                       |
+| Admin              | http://localhost:3000/admin                                                 |
+| API                | http://localhost:3000/api/v1 (health: `/api/v1/health`)                     |
+| API docs (Swagger) | `pnpm --filter @hoodie/api dev:server`, then http://localhost:4000/api/docs |
+
+The site reads the API's settings (database, secrets) from `apps/api/.env`.
 
 ### Demo accounts (development seed)
 
@@ -72,7 +75,7 @@ pnpm dev              # start the API, storefront and admin together
 | Super Admin | `admin@hoodie.local`    | value of `SEED_ADMIN_PASSWORD` in `apps/api/.env` (default `ChangeMe123`) |
 | Customer    | `customer@hoodie.local` | `Customer123`                                                             |
 
-Sign in to the admin panel at http://localhost:3001 with the Super Admin account. Invite more staff from **Staff** in the admin panel.
+Sign in to the admin panel at http://localhost:3000/admin with the Super Admin account. Invite more staff from **Staff** in the admin panel.
 
 ### What the seed loads
 
@@ -142,14 +145,14 @@ Engagement features (Phase 5):
 
 ```bash
 pnpm build      # all apps must be built
-pnpm e2e        # starts the API, storefront and admin if they aren't running, then runs Playwright
+pnpm e2e        # starts the site if it isn't running, then runs Playwright
 ```
 
-There are 51 tests on desktop, mobile (Pixel 7) and the admin panel. They cover browsing, filters, sorting, search (including suggestions with a typo), the size guide, the cart, sold-out and low-stock states, registering with a guest cart, addresses, signing out and in, the mobile menu and filters, checkout (Cash on Delivery, demo card payments with a decline then success, coupons, saved addresses, tracking and cancelling), wishlist, recently viewed, reviews, returns, unsubscribe links, and the admin (sign-in and access rules, fulfilling and refunding orders, creating a product with variants and stock, coupons, the dashboard, publishing a review, and a return from approval to refund), plus automated **accessibility checks** (axe, WCAG 2.1 AA) on 14 storefront pages and 10 admin pages. Card tests switch demo card payments on for the run and off again afterwards. They run against the database in `apps/api/.env`, create uniquely named `@test.local` users, and sign in to the admin with `SEED_ADMIN_PASSWORD` (or `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`). If the API is already running, start it with `RATE_LIMIT_ENABLED=false`, because the tests sign in more than five times a minute.
+There are 51 tests on desktop, mobile (Pixel 7) and the admin panel. They cover browsing, filters, sorting, search (including suggestions with a typo), the size guide, the cart, sold-out and low-stock states, registering with a guest cart, addresses, signing out and in, the mobile menu and filters, checkout (Cash on Delivery, demo card payments with a decline then success, coupons, saved addresses, tracking and cancelling), wishlist, recently viewed, reviews, returns, unsubscribe links, and the admin (sign-in and access rules, fulfilling and refunding orders, creating a product with variants and stock, coupons, the dashboard, publishing a review, and a return from approval to refund), plus automated **accessibility checks** (axe, WCAG 2.1 AA) on 14 storefront pages and 10 admin pages. Card tests switch demo card payments on for the run and off again afterwards. They run against the database in `apps/api/.env`, create uniquely named `@test.local` users, and sign in to the admin with `SEED_ADMIN_PASSWORD` (or `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD`). If the site is already running, start it with `RATE_LIMIT_ENABLED=false` and `ALLOW_DEMO_PAYMENTS=true`, because the tests sign in more than five times a minute and use demo cards.
 
 ## Admin panel
 
-http://localhost:3001 (staff accounts only; customer accounts are refused).
+http://localhost:3000/admin (staff accounts only; customer accounts are refused). Routes below are under `/admin`.
 
 | Module         | Route                                 | What staff can do                                                                                                                                                                                                   |
 | -------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -194,7 +197,7 @@ With `REDIS_URL` set, the API runs a **BullMQ** worker. Emails are queued and re
 
 Every marketing email (newsletter welcome, cart reminders) has a signed unsubscribe link; the storefront asks for a click before unsubscribing, because some email scanners open every link. Order emails are always sent.
 
-The worker runs inside the API by default. To run it separately, set `RUN_WORKER=false` on the API servers and start `node apps/api/dist/worker.js`. **Without Redis** the recurring jobs run on simple timers inside the API, emails are sent straight away, and the daily summary email is skipped. **On Vercel** there is no worker: Vercel Cron calls `GET /api/v1/cron/daily` (with `CRON_SECRET`) once a day to run all the scheduled jobs.
+The worker runs inside the API by default. To run it separately, set `RUN_WORKER=false` on the API servers and start `node apps/api/dist/worker.js`. **Without Redis** the recurring jobs run on simple timers inside the API, emails are sent straight away, and the daily summary email is skipped. This applies to the standalone API server (`node apps/api/dist/server.js`). **In the site** (`apps/storefront`, and so on Vercel) there is no worker: emails are sent straight away and Vercel Cron calls `GET /api/v1/cron/daily` (with `CRON_SECRET`) once a day to run all the scheduled jobs.
 
 ## Checkout and payments
 
@@ -220,7 +223,7 @@ Use any future expiry date and any CVC. Demo mode is **off in production** unles
 
 1. Create a Stripe account and copy the test keys from the Stripe dashboard.
 2. In `apps/api/.env`, set `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET`.
-3. Point a webhook at `https://<your-api>/api/v1/payments/stripe/webhook` for `payment_intent.succeeded` and `payment_intent.payment_failed`. Locally: `stripe listen --forward-to localhost:4000/api/v1/payments/stripe/webhook`.
+3. Point a webhook at `https://<your-api>/api/v1/payments/stripe/webhook` for `payment_intent.succeeded` and `payment_intent.payment_failed`. Locally: `stripe listen --forward-to localhost:3000/api/v1/payments/stripe/webhook`.
 4. Restart the API. The checkout then shows Stripe's Payment Element, and card details go straight to Stripe.
 
 ## API

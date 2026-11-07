@@ -4,14 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack --port 3000",
+    "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@hoodie/api": "workspace:*",
     "@hoodie/types": "workspace:*",
     "@hoodie/ui": "workspace:*",
     "@hoodie/validation": "workspace:*",
@@ -39,6 +41,7 @@
     "@types/react-dom": "^19.1.7",
     "eslint": "^9.39.5",
     "tailwindcss": "^4.3.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
   }
 }

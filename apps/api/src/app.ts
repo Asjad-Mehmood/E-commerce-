@@ -10,7 +10,7 @@ import { docsRouter } from "./docs/docs.routes";
 import { logger } from "./lib/logger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { originCheck } from "./middleware/origin-check";
-import { trustedProxy } from "./middleware/trusted-proxy";
+import { internalRequest } from "./middleware/internal-request";
 import { createRateLimiters, type RateLimitOptions } from "./middleware/rate-limit";
 import { MAX_UPLOAD_BYTES } from "./modules/admin/uploads.routes";
 import { apiRouter } from "./routes";
@@ -28,7 +28,7 @@ export function createApp({ extend, rateLimit }: CreateAppOptions = {}): Express
 
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
-  app.use(trustedProxy(env.PROXY_SECRET));
+  app.use(internalRequest);
 
   app.use(
     pinoHttp({

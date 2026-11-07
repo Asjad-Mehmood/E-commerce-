@@ -2,24 +2,12 @@
 export const siteConfig = {
   name: process.env.NEXT_PUBLIC_STORE_NAME ?? "Urban Store",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  /** API URL used by the browser. */
-  apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1",
+  /** The store's API, served by this same site. */
+  apiUrl: "/api/v1",
   description:
     "Urban Store: everyday streetwear hoodies made in Pakistan. Pullovers, zip-ups and oversized fits, with Cash on Delivery nationwide.",
   currency: "PKR",
 };
-
-/**
- * API URL for server components: API_URL (the API's own address), or the
- * public URL when that is absolute (development). Server-side only.
- */
-export function serverApiUrl(): string {
-  const url = process.env.API_URL ?? siteConfig.apiUrl;
-  if (url.startsWith("/")) {
-    throw new Error("Set API_URL to the API's address, e.g. https://your-api.vercel.app/api/v1");
-  }
-  return url.replace(/\/+$/, "");
-}
 
 export const footerNav = {
   Shop: [

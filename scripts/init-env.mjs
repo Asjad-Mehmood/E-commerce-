@@ -7,7 +7,6 @@ import { join } from "node:path";
 const targets = [
   ["apps/api/.env.example", "apps/api/.env"],
   ["apps/storefront/.env.example", "apps/storefront/.env.local"],
-  ["apps/admin/.env.example", "apps/admin/.env.local"],
 ];
 
 for (const [from, to] of targets) {

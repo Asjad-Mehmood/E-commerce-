@@ -22,12 +22,13 @@ export const bullConnection = () =>
   new Redis(env.REDIS_URL!, { maxRetriesPerRequest: null, enableReadyCheck: false });
 
 /**
- * The queue, or null when Redis is not configured, in tests, and on Vercel
- * (no long-running worker there): jobs then run inline, and scheduled jobs
- * run from the daily cron request (GET /api/v1/cron/daily).
+ * The queue, or null when Redis is not configured, in tests, and when the API
+ * runs inside the site (embedded.ts, e.g. on Vercel: no long-running worker
+ * there): jobs then run inline, and scheduled jobs run from the daily cron
+ * request (GET /api/v1/cron/daily).
  */
 export const queue: Queue | null =
-  env.REDIS_URL && !isTest && !process.env.VERCEL
+  env.REDIS_URL && !isTest && !process.env.VERCEL && !process.env.API_EMBEDDED
     ? new Queue(QUEUE_NAME, { connection: bullConnection() })
     : null;
 

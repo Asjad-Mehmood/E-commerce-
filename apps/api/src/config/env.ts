@@ -29,15 +29,16 @@ const envSchema = z
     /** Optional key for encrypting secrets saved in the admin settings (defaults to one derived from JWT_ACCESS_SECRET). */
     SETTINGS_SECRET: z.string().min(16).optional(),
 
-    // Links in emails
-    STOREFRONT_URL: z.url().default("http://localhost:3000"),
-    ADMIN_URL: z.url().default("http://localhost:3001"),
-    /** Public origin of this API (used in the URLs of uploaded images). On Vercel it defaults to the production domain. */
+    // The site's address, for links in emails. The shop, the admin panel (/admin)
+    // and this API (/api/v1) share one site; on Vercel it defaults to the
+    // production domain, so these are only needed for a custom setup.
+    STOREFRONT_URL: z.url().optional(),
+    /** Admin panel address (default: STOREFRONT_URL + /admin). */
+    ADMIN_URL: z.url().optional(),
+    /** Public address of this API, for the URLs of uploaded images (default: STOREFRONT_URL). */
     API_PUBLIC_URL: z.url().optional(),
 
     // Hosting (Vercel)
-    /** Shared with the storefront and admin: they proxy /api/v1 and pass the shopper's IP with it. */
-    PROXY_SECRET: z.string().min(16, "PROXY_SECRET must be at least 16 characters").optional(),
     /** Vercel sends it with scheduled (cron) requests; enables GET /api/v1/cron/daily. */
     CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters").optional(),
     /** Set by Vercel: the project's production domain, e.g. urbanstore-api.vercel.app. */
@@ -72,32 +73,43 @@ const envSchema = z
     RUN_WORKER: bool(true),
     API_DOCS_ENABLED: z.enum(["true", "false"]).optional(),
   })
-  .transform((e) => ({
-    ...e,
-    CORS_ORIGINS: (e.CORS_ORIGINS ?? `${e.STOREFRONT_URL},${e.ADMIN_URL}`)
-      .split(",")
-      .map((o) => o.trim())
-      .filter(Boolean)
-      .map((o) => (URL.canParse(o) ? new URL(o).origin : o)),
-    API_PUBLIC_URL: (
-      e.API_PUBLIC_URL ??
-      (e.VERCEL_PROJECT_PRODUCTION_URL
-        ? `https://${e.VERCEL_PROJECT_PRODUCTION_URL}`
-        : "http://localhost:4000")
-    ).replace(/\/$/, ""),
-    // Secure cookies are always on in production.
-    COOKIE_SECURE: e.NODE_ENV === "production" ? true : e.COOKIE_SECURE,
-    // API docs default to on, except in production.
-    API_DOCS_ENABLED:
-      e.API_DOCS_ENABLED === undefined
-        ? e.NODE_ENV !== "production"
-        : e.API_DOCS_ENABLED === "true",
-    // Demo card payments default to on, except in production.
-    ALLOW_DEMO_PAYMENTS:
-      e.ALLOW_DEMO_PAYMENTS === undefined
-        ? e.NODE_ENV !== "production"
-        : e.ALLOW_DEMO_PAYMENTS === "true",
-  }))
+  .transform((e) => {
+    const trim = (url: string) => url.replace(/\/+$/, "");
+    const site = trim(
+      e.STOREFRONT_URL ??
+        (e.VERCEL_PROJECT_PRODUCTION_URL
+          ? `https://${e.VERCEL_PROJECT_PRODUCTION_URL}`
+          : "http://localhost:3000"),
+    );
+    const admin = trim(e.ADMIN_URL ?? `${site}/admin`);
+    return {
+      ...e,
+      STOREFRONT_URL: site,
+      ADMIN_URL: admin,
+      API_PUBLIC_URL: trim(e.API_PUBLIC_URL ?? site),
+      CORS_ORIGINS: [
+        ...new Set(
+          (e.CORS_ORIGINS ?? `${site},${admin}`)
+            .split(",")
+            .map((o) => o.trim())
+            .filter(Boolean)
+            .map((o) => (URL.canParse(o) ? new URL(o).origin : o)),
+        ),
+      ],
+      // Secure cookies are always on in production.
+      COOKIE_SECURE: e.NODE_ENV === "production" ? true : e.COOKIE_SECURE,
+      // API docs default to on, except in production.
+      API_DOCS_ENABLED:
+        e.API_DOCS_ENABLED === undefined
+          ? e.NODE_ENV !== "production"
+          : e.API_DOCS_ENABLED === "true",
+      // Demo card payments default to on, except in production.
+      ALLOW_DEMO_PAYMENTS:
+        e.ALLOW_DEMO_PAYMENTS === undefined
+          ? e.NODE_ENV !== "production"
+          : e.ALLOW_DEMO_PAYMENTS === "true",
+    };
+  })
   .superRefine((e, ctx) => {
     if (e.STRIPE_SECRET_KEY && !e.STRIPE_WEBHOOK_SECRET) {
       ctx.addIssue({
@@ -120,13 +132,14 @@ export type Env = z.infer<typeof envSchema>;
 function loadEnv(): Env {
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
-    console.error("❌ Invalid environment variables:\n" + z.prettifyError(parsed.error));
-    process.exit(1);
+    const message = "Invalid environment variables:\n" + z.prettifyError(parsed.error);
+    console.error("❌ " + message);
+    throw new Error(message);
   }
   return parsed.data;
 }
 
-/** Validated, typed environment. The process exits on startup if it is invalid. */
+/** Validated, typed environment. Loading the API fails with the list of problems if it is invalid. */
 export const env = loadEnv();
 export const isProd = env.NODE_ENV === "production";
 export const isTest = env.NODE_ENV === "test";

@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { adminLogin } from "./admin-helpers";
+import { adminLogin, adminUrl } from "./admin-helpers";
 
 const PAGES = [
   "/",
@@ -26,14 +26,14 @@ async function violations(page: Page) {
 }
 
 test("the login page has no detectable accessibility issues", async ({ page }) => {
-  await page.goto("/login");
+  await page.goto(adminUrl("/login"));
   expect(await violations(page)).toEqual([]);
 });
 
 test("the main admin pages have no detectable accessibility issues", async ({ page }) => {
   await adminLogin(page);
   for (const path of PAGES) {
-    await page.goto(path);
+    await page.goto(adminUrl(path));
     await page.waitForLoadState("networkidle");
     await expect(page.locator("h1").first()).toBeVisible();
     expect({ path, violations: await violations(page) }).toEqual({ path, violations: [] });

@@ -8,12 +8,16 @@ export const ADMIN = {
   password: process.env.E2E_ADMIN_PASSWORD ?? process.env.SEED_ADMIN_PASSWORD ?? "ChangeMe123",
 };
 
+/** The admin panel is under /admin on the shop's site: "/orders" → "/admin/orders". */
+export const adminUrl = (path: string) => `/admin${path === "/" ? "" : path}`;
+
+/** Signs in on the admin login page and lands on `path` (a panel path such as "/orders"). */
 export async function adminLogin(page: Page, path = "/") {
-  await page.goto(`/login${path === "/" ? "" : `?next=${encodeURIComponent(path)}`}`);
+  await page.goto(adminUrl(`/login${path === "/" ? "" : `?next=${encodeURIComponent(path)}`}`));
   await page.getByLabel("Email").fill(ADMIN.email);
   await page.getByLabel("Password").fill(ADMIN.password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(path);
+  await expect(page).toHaveURL(adminUrl(path));
 }
 
 const address = {
