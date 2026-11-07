@@ -1,0 +1,4 @@
+{
+  "extends": "@hoodie/config/tsconfig/node.json",
+  "include": ["src", "test", "prisma", "*.ts"]
+}
