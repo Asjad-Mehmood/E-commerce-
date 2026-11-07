@@ -43,13 +43,13 @@ describe("GET /products", () => {
     expect(res.body.data).toHaveLength(0);
     // the seeded draft hoodie too
     const all = await get("/products?limit=100");
-    expect(all.body.data.map((p: Card) => p.slug)).not.toContain("varsity-embroidered-hoodie");
+    expect(all.body.data.map((p: Card) => p.slug)).not.toContain("varsity-letter-hoodie");
   });
 
   it("filters by category (including the seeded catalogue)", async () => {
     const res = await get("/products?category=zip-up&limit=50");
     const slugs = res.body.data.map((p: Card) => p.slug).sort();
-    expect(slugs).toEqual(["essential-zip-up-hoodie", "sherpa-lined-zip-hoodie"]);
+    expect(slugs).toEqual(["sherpa-zip-hoodie", "zip-up-fleece-hoodie"]);
   });
 
   it("filters by collection and fit", async () => {
@@ -59,8 +59,8 @@ describe("GET /products", () => {
   });
 
   it("filters by size and colour on the same variant", async () => {
-    const res = await get("/products?size=XS&color=Lilac&limit=50");
-    expect(res.body.data.map((p: Card) => p.slug)).toEqual(["cropped-boxy-hoodie"]);
+    const res = await get("/products?size=XS&color=Blush%20Pink&limit=50");
+    expect(res.body.data.map((p: Card) => p.slug)).toEqual(["pastel-relaxed-hoodie"]);
   });
 
   it("filters by price range (minor units)", async () => {
@@ -96,7 +96,7 @@ describe("GET /products", () => {
 
   it("searches title and description case-insensitively", async () => {
     const res = await get("/products?q=SHERPA");
-    expect(res.body.data.map((p: Card) => p.slug)).toContain("sherpa-lined-zip-hoodie");
+    expect(res.body.data.map((p: Card) => p.slug)).toContain("sherpa-zip-hoodie");
   });
 
   it.each([
@@ -116,16 +116,17 @@ describe("GET /products", () => {
 
 describe("GET /products/:slug", () => {
   it("returns details with sorted variants, images and taxonomy", async () => {
-    const res = await get("/products/classic-pullover-hoodie");
+    const res = await get("/products/urban-essential-pullover-hoodie");
     expect(res.status).toBe(200);
     const p = res.body.data;
     expect(p.sizes).toEqual(["XS", "S", "M", "L", "XL", "XXL"]);
     expect(p.colors.map((c: { name: string }) => c.name)).toEqual([
       "Jet Black",
       "Heather Grey",
+      "White",
       "Navy",
     ]);
-    expect(p.variants).toHaveLength(18);
+    expect(p.variants).toHaveLength(24);
     expect(p.variants.slice(0, 6).map((v: { size: string }) => v.size)).toEqual(p.sizes);
     expect(p.categories).toEqual([expect.objectContaining({ slug: "pullover" })]);
     expect(p.images.length).toBeGreaterThan(0);
@@ -171,15 +172,15 @@ describe("GET /products/:slug", () => {
   });
 
   it("returns 404 for drafts and unknown slugs", async () => {
-    expect((await get("/products/varsity-embroidered-hoodie")).status).toBe(404);
+    expect((await get("/products/varsity-letter-hoodie")).status).toBe(404);
     expect((await get("/products/does-not-exist")).status).toBe(404);
   });
 
   it("lists related products without the product itself", async () => {
-    const res = await get("/products/classic-pullover-hoodie/related");
+    const res = await get("/products/urban-essential-pullover-hoodie/related");
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBeGreaterThan(0);
-    expect(res.body.data.map((p: Card) => p.slug)).not.toContain("classic-pullover-hoodie");
+    expect(res.body.data.map((p: Card) => p.slug)).not.toContain("urban-essential-pullover-hoodie");
   });
 });
 
@@ -188,15 +189,15 @@ describe("categories, collections and filters", () => {
     const res = await get("/categories");
     // Other test files add products concurrently, so compare with the database
     // rather than hard-coded numbers. Only ACTIVE products count (the seeded
-    // "graphic" category also holds a DRAFT hoodie).
-    for (const slug of ["zip-up", "graphic"]) {
+    // "custom" category also holds a DRAFT hoodie).
+    for (const slug of ["zip-up", "custom"]) {
       const node = res.body.data.find((c: { slug: string }) => c.slug === slug);
       const [active, all] = await Promise.all([
         prisma.product.count({ where: { status: "ACTIVE", categories: { some: { slug } } } }),
         prisma.product.count({ where: { categories: { some: { slug } } } }),
       ]);
       expect(node.productCount).toBe(active);
-      if (slug === "graphic") expect(all).toBeGreaterThan(active);
+      if (slug === "custom") expect(all).toBeGreaterThan(active);
     }
   });
 
@@ -217,12 +218,12 @@ describe("categories, collections and filters", () => {
     expect(res.body.data).toMatchObject({
       sizes: ["XS", "S", "M", "L", "XL", "XXL"],
       fits: ["REGULAR"],
-      price: { min: 399900, max: 599900 },
+      price: { min: 379900, max: 549900 },
     });
     expect(res.body.data.colors).toEqual(
       expect.arrayContaining([
-        { name: "Chocolate", hex: "#6B4F3A" },
-        { name: "Charcoal", hex: "#36454F" },
+        { name: "Maroon", hex: "#6D1F2A" },
+        { name: "Cream", hex: "#EFE6D2" },
       ]),
     );
   });

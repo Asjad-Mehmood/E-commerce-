@@ -14,7 +14,7 @@ const perks = [
     body: "1-2 days in Lahore, 2-5 days across Pakistan.",
   },
   { icon: RefreshIcon, title: "14-day free exchanges", body: "Wrong size? Swap it for free." },
-  { icon: ShieldIcon, title: "Secure checkout", body: "Pay by card or Cash on Delivery." },
+  { icon: ShieldIcon, title: "Cash on Delivery", body: "Pay in cash when your parcel arrives." },
 ];
 
 const TILE_TONES = ["bg-[#1E3A5F]", "bg-[#36454F]", "bg-[#8B7355]", "bg-[#111111]"];
@@ -103,15 +103,29 @@ export default async function HomePage() {
         <section>
           <Container className="pt-14">
             <h2 className="text-2xl font-bold tracking-tight">Shop by style</h2>
-            <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div
+              className={`mt-6 grid grid-cols-2 gap-4 ${categories.length === 5 ? "md:grid-cols-3 lg:grid-cols-5" : "lg:grid-cols-4"}`}
+            >
               {categories.map((c, i) => (
                 <Link
                   key={c.id}
                   href={`/categories/${c.slug}`}
-                  className={`${TILE_TONES[i % TILE_TONES.length]} group flex aspect-[4/3] flex-col justify-end rounded-xl p-5 text-white`}
+                  className={`${TILE_TONES[i % TILE_TONES.length]} group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-xl p-5 text-white`}
                 >
-                  <span className="text-lg font-bold group-hover:underline">{c.name}</span>
-                  <span className="text-sm text-white/70">
+                  {c.imageUrl && (
+                    <>
+                      <Image
+                        src={c.imageUrl}
+                        alt=""
+                        fill
+                        sizes="(min-width: 1024px) 20vw, 50vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                    </>
+                  )}
+                  <span className="relative text-lg font-bold group-hover:underline">{c.name}</span>
+                  <span className="relative text-sm text-white/80">
                     {c.productCount} {c.productCount === 1 ? "style" : "styles"}
                   </span>
                 </Link>

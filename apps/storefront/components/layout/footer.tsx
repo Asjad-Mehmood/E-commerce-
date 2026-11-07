@@ -35,7 +35,7 @@ export function Footer() {
           <p>
             © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
           </p>
-          <p>Cash on Delivery · Visa · Mastercard</p>
+          <p>Cash on Delivery nationwide</p>
         </Container>
       </div>
     </footer>

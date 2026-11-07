@@ -77,7 +77,7 @@ export async function customerWithDeliveredOrder(playwright: {
   expect(reg.status()).toBe(201);
 
   // A seeded product: other tests create and archive their own products in parallel.
-  const slug = "classic-pullover-hoodie";
+  const slug = "urban-essential-pullover-hoodie";
   const detail = (await (await customer.get(`${API}/products/${slug}`)).json()).data;
   const title = detail.title as string;
   const variant = (detail.variants as { id: string; stockStatus: string }[]).find(

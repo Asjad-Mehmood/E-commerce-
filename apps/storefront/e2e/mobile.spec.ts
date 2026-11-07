@@ -21,7 +21,13 @@ test("filters open in a drawer on small screens", async ({ page }) => {
 });
 
 test("no horizontal scrolling on key pages", async ({ page }) => {
-  for (const path of ["/", "/shop", "/products/classic-pullover-hoodie", "/cart", "/login"]) {
+  for (const path of [
+    "/",
+    "/shop",
+    "/products/urban-essential-pullover-hoodie",
+    "/cart",
+    "/login",
+  ]) {
     await page.goto(path);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,

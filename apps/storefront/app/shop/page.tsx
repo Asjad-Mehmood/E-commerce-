@@ -4,7 +4,8 @@ import type { SearchParams } from "@/lib/listing";
 
 export const metadata: Metadata = {
   title: "Shop all hoodies",
-  description: "Browse every hoodie: pullovers, zip-ups, oversized and graphic styles.",
+  description:
+    "Browse every hoodie: pullovers, zip-ups, oversized fits and custom embroidered styles.",
   alternates: { canonical: "/shop" },
 };
 

@@ -12,12 +12,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ["@hoodie/ui", "@hoodie/types", "@hoodie/validation"],
-  images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "res.cloudinary.com" },
-      { protocol: "https", hostname: "placehold.co" },
-    ],
-  },
+  // Staff see few images: load them as they are, from any host.
+  images: { unoptimized: true },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -31,12 +31,12 @@ test("filters update the URL and results, and can be cleared", async ({ page }) 
   const count = page.getByText(/^\d+ products?$/);
   const before = await count.textContent();
 
-  await page.getByRole("checkbox", { name: "Lilac" }).check();
-  await expect(page).toHaveURL(/color=Lilac/);
+  await page.getByRole("checkbox", { name: "Blush Pink" }).check();
+  await expect(page).toHaveURL(/color=Blush/);
   await expect(count).toHaveText("1 product");
-  await expect(page.getByRole("heading", { name: "Cropped Boxy Hoodie" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pastel Relaxed Hoodie" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Remove filter: Lilac" }).click();
+  await page.getByRole("button", { name: "Remove filter: Blush Pink" }).click();
   await expect(page).not.toHaveURL(/color=/);
   await expect(count).toHaveText(before!);
 });
@@ -54,7 +54,7 @@ test("search finds products", async ({ page }) => {
   await page.goto("/search");
   await page.getByRole("searchbox", { name: "Search hoodies" }).fill("sherpa");
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Sherpa-Lined Zip Hoodie" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sherpa Zip Hoodie" })).toBeVisible();
 });
 
 test("a missing product returns a real 404", async ({ page }) => {
@@ -64,7 +64,7 @@ test("a missing product returns a real 404", async ({ page }) => {
 });
 
 test("size guide recommends a size", async ({ page }) => {
-  await page.goto("/products/classic-pullover-hoodie");
+  await page.goto("/products/urban-essential-pullover-hoodie");
   await page.getByRole("button", { name: "Size guide" }).click();
   const dialog = page.getByRole("dialog", { name: /Size guide/ });
   await dialog.getByLabel(/Your chest measurement/).fill("38");

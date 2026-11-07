@@ -10,6 +10,9 @@ const ADMIN_URL = process.env.E2E_ADMIN_URL ?? "http://localhost:3001";
  */
 export default defineConfig({
   testDir: "./e2e",
+  // Card tests need demo card payments, which the store has off by default.
+  globalSetup: "./e2e/card-payments.ts",
+  globalTeardown: "./e2e/card-payments-teardown.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

@@ -14,31 +14,31 @@ test("search suggests products as you type, even with a typo", async ({ page }) 
   await page.goto("/");
   await page.getByRole("button", { name: "Open search" }).click();
   await page.getByRole("combobox", { name: "Search hoodies" }).fill("sherpaa");
-  const option = page.getByRole("option", { name: /Sherpa-Lined Zip Hoodie/ });
+  const option = page.getByRole("option", { name: /Sherpa Zip Hoodie/ });
   await expect(option).toBeVisible();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/products\/sherpa-lined-zip-hoodie$/);
+  await expect(page).toHaveURL(/\/products\/sherpa-zip-hoodie$/);
 });
 
 test("remembers recently viewed products", async ({ page }) => {
-  await page.goto("/products/essential-zip-up-hoodie");
+  await page.goto("/products/zip-up-fleece-hoodie");
   // The visit is recorded once the page is interactive.
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("recently-viewed")))
-    .toContain("essential-zip-up-hoodie");
-  await page.goto("/products/classic-pullover-hoodie");
+    .toContain("zip-up-fleece-hoodie");
+  await page.goto("/products/urban-essential-pullover-hoodie");
   const strip = page.getByRole("region", { name: "Recently viewed" });
-  await expect(strip.getByRole("heading", { name: "Essential Zip-Up Hoodie" })).toBeVisible();
+  await expect(strip.getByRole("heading", { name: "Zip-Up Fleece Hoodie" })).toBeVisible();
 });
 
 test("guests are asked to sign in before saving to the wishlist", async ({ page }) => {
-  await page.goto("/products/classic-pullover-hoodie");
+  await page.goto("/products/urban-essential-pullover-hoodie");
   await page
-    .getByRole("button", { name: "Save Classic Pullover Hoodie to wishlist" })
+    .getByRole("button", { name: "Save Urban Essential Pullover Hoodie to wishlist" })
     .first()
     .click();
-  await expect(page).toHaveURL("/login?next=%2Fproducts%2Fclassic-pullover-hoodie");
+  await expect(page).toHaveURL("/login?next=%2Fproducts%2Furban-essential-pullover-hoodie");
 });
 
 test("a customer reviews a delivered hoodie, saves it, and requests a return", async ({
