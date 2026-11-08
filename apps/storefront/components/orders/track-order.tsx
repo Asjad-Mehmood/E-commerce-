@@ -40,7 +40,7 @@ export function TrackOrder() {
         <Field label="Order number" htmlFor="track-number" error={errors.number?.message}>
           <Input
             id="track-number"
-            placeholder="HD-10001"
+            placeholder="US-10001"
             invalid={!!errors.number}
             {...register("number")}
           />

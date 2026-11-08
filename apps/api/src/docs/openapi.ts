@@ -94,10 +94,10 @@ export function buildOpenApiSpec(serverUrl = "/") {
   return {
     openapi: "3.1.0",
     info: {
-      title: "Hoodie Store API",
+      title: "Urban Store API",
       version: "1.0.0",
       description:
-        "REST API for the Hoodie Store storefront and admin.\n\n" +
+        "REST API for the Urban Store storefront and admin.\n\n" +
         "- **Auth:** sign in with `POST /auth/login`. Browsers use httpOnly cookies; other clients can send `Authorization: Bearer <accessToken>`. Access tokens last 15 minutes; on a 401 with `details.reason = TOKEN_EXPIRED`, call `POST /auth/refresh`.\n" +
         "- **Money** is always an integer in minor units (paisa): `349900` = Rs 3,499.\n" +
         "- **Responses:** `{ data }` or `{ data, meta }` on success, `{ error: { code, message, details, requestId } }` on failure.",

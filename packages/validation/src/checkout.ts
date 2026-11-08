@@ -9,7 +9,7 @@ export const CHECKOUT_PAYMENT_METHODS = ["STRIPE", "COD"] as const;
 export const quoteSchema = z.object({
   city: z.string().trim().max(80).default(""),
   shippingMethod: z.enum(SHIPPING_METHODS).default("standard"),
-  paymentMethod: z.enum(CHECKOUT_PAYMENT_METHODS).default("STRIPE"),
+  paymentMethod: z.enum(CHECKOUT_PAYMENT_METHODS).default("COD"),
 });
 export type QuoteInput = z.infer<typeof quoteSchema>;
 

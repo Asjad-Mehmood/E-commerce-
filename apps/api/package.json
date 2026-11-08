@@ -3,8 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./embedded": {
+      "types": "./embedded.d.ts",
+      "default": "./dist/embedded.js"
+    }
+  },
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "dev": "tsup --watch",
     "build": "tsup",
     "start": "node --env-file-if-exists=.env dist/server.js",
     "lint": "eslint .",
@@ -16,12 +22,14 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "dev:server": "tsx watch --env-file-if-exists=.env src/server.ts"
   },
   "dependencies": {
     "@hoodie/types": "workspace:*",
     "@hoodie/validation": "workspace:*",
     "@prisma/client": "6.19.3",
+    "@vercel/functions": "^3.11.0",
     "argon2": "^0.45.2",
     "bullmq": "^5.81.5",
     "compression": "^1.8.1",
@@ -32,6 +40,7 @@
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
     "jose": "^6.2.15",
+    "nodemailer": "^10.3.1",
     "pdfkit": "^0.17.2",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
@@ -47,6 +56,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^22.20.5",
+    "@types/nodemailer": "^8.0.2",
     "@types/pdfkit": "^0.17.7",
     "@types/supertest": "^6.0.3",
     "@types/swagger-ui-express": "^4.1.8",

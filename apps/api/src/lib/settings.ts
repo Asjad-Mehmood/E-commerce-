@@ -23,8 +23,8 @@ export interface StoreInfo {
 /** Store contact details for invoices, packing slips and emails. */
 export async function storeInfo(): Promise<StoreInfo> {
   const s = await getSettings({
-    "store.name": "Hoodie Store",
-    "store.email": "support@hoodie.local",
+    "store.name": "Urban Store",
+    "store.email": "support@urbanstore.pk",
     "store.phone": "",
     "store.address": "",
   });

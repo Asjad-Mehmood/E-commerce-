@@ -75,13 +75,13 @@ describe("create product", () => {
 
     const sku = await admin
       .post("/api/v1/admin/products")
-      .send(newProduct({ variants: [{ sku: "CPH-JET-M", size: "M", color: "Black" }] }));
+      .send(newProduct({ variants: [{ sku: "UEP-JET-M", size: "M", color: "Black" }] }));
     expect(sku.status).toBe(409);
-    expect(sku.body.error.message).toContain("CPH-JET-M");
+    expect(sku.body.error.message).toContain("UEP-JET-M");
 
     const slug = await admin
       .post("/api/v1/admin/products")
-      .send(newProduct({ slug: "classic-pullover-hoodie" }));
+      .send(newProduct({ slug: "urban-essential-pullover-hoodie" }));
     expect(slug.status).toBe(409);
   });
 });
@@ -92,7 +92,7 @@ describe("update product", () => {
       newProduct({
         status: "ACTIVE",
         isFeatured: true,
-        categoryIds: [(await prisma.category.findUniqueOrThrow({ where: { slug: "graphic" } })).id],
+        categoryIds: [(await prisma.category.findUniqueOrThrow({ where: { slug: "custom" } })).id],
         images: [{ url: "https://res.cloudinary.com/demo/keep.jpg" }],
       }),
     );

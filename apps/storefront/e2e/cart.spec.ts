@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { addToCart, findVariant, selectVariant, uniqueEmail } from "./helpers";
 
 test("asks for a size before adding to cart", async ({ page }) => {
-  await page.goto("/products/classic-pullover-hoodie");
+  await page.goto("/products/urban-essential-pullover-hoodie");
   await page.getByRole("button", { name: "Add to cart" }).click();
   await expect(page.locator("#size-error")).toHaveText("Please choose a size.");
 });

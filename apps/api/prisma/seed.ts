@@ -3,8 +3,10 @@
  *
  *   pnpm db:seed
  *
- * In production only the essentials are seeded (admin, settings, shipping,
- * pages, FAQ). Demo products, coupons, banners and the demo customer are skipped.
+ * In production the essentials are seeded (admin, settings, shipping, pages,
+ * FAQ), plus the starter catalogue and banners the first time only (while the
+ * store has no products), so later edits in the admin are never overwritten.
+ * Demo customers, reviews and coupons are development only.
  */
 import { PrismaClient } from "@prisma/client";
 import { hash } from "argon2";
@@ -17,7 +19,10 @@ import {
   faqs,
   pages,
   products,
+  retiredCategorySlugs,
+  retiredProductSlugs,
   settings,
+  unsplash,
   shippingZones,
   demoReviews,
 } from "./seed-data";
@@ -38,15 +43,6 @@ function colorCode(name: string): string {
     .replace(/[^a-zA-Z]/g, "")
     .slice(0, 3)
     .toUpperCase();
-}
-
-function imageUrl(title: string, color: { name: string; hex: string }, view: string): string {
-  const bg = color.hex.replace("#", "");
-  const fg = ["F5F0E6", "D6C4A8", "9CA3AF", "C8A2C8"].includes(bg.toUpperCase())
-    ? "111111"
-    : "FFFFFF";
-  const text = encodeURIComponent(`${title}\n${color.name} · ${view}`).replace(/%20/g, "+");
-  return `https://placehold.co/800x1000/${bg}/${fg}/png?text=${text}`;
 }
 
 async function seedAdmin() {
@@ -120,7 +116,12 @@ async function seedShipping() {
 
 async function seedContent() {
   for (const page of pages) {
-    await prisma.page.upsert({ where: { slug: page.slug }, update: {}, create: page });
+    // Production: only create, never overwrite a page edited in the admin.
+    await prisma.page.upsert({
+      where: { slug: page.slug },
+      update: isProd ? {} : page,
+      create: page,
+    });
   }
   for (const [position, faq] of faqs.entries()) {
     const { id, ...data } = faq;
@@ -134,11 +135,12 @@ async function seedContent() {
 }
 
 async function seedCatalog() {
-  for (const [position, c] of categories.entries()) {
+  for (const [position, { image, ...c }] of categories.entries()) {
+    const imageUrl = unsplash(image, 800);
     await prisma.category.upsert({
       where: { slug: c.slug },
-      update: { name: c.name, description: c.description, position },
-      create: { ...c, position },
+      update: { name: c.name, description: c.description, imageUrl, position },
+      create: { ...c, imageUrl, position },
     });
   }
   for (const [position, c] of collections.entries()) {
@@ -161,8 +163,9 @@ async function seedCatalog() {
       compareAtPrice: p.compareAtPrice ?? null,
       status: p.status,
       isFeatured: p.isFeatured,
-      soldCount: p.soldCount,
-      seoTitle: `${p.title} | Hoodie Store`,
+      // Sales figures are made up, so only in development.
+      soldCount: isProd ? 0 : p.soldCount,
+      seoTitle: `${p.title} | Urban Store`,
       seoDescription: p.description.slice(0, 155),
       publishedAt: p.status === "ACTIVE" ? new Date() : null,
       categories: { set: p.categories.map((slug) => ({ slug })) },
@@ -180,18 +183,20 @@ async function seedCatalog() {
       },
     });
 
-    // Images: two views per colour, ordered by colour then view.
-    await prisma.productImage.deleteMany({ where: { productId: product.id } });
-    await prisma.productImage.createMany({
-      data: p.colors.flatMap((color, ci) =>
-        ["Front", "Back"].map((view, vi) => ({
-          productId: product.id,
-          url: imageUrl(p.title, color, view),
-          alt: `${p.title} in ${color.name}, ${view.toLowerCase()} view`,
+    // Photos: by colour (so the gallery follows the swatch), then extras.
+    const images = [
+      ...p.colors.flatMap((color) =>
+        color.photos.map((id, i) => ({
+          url: unsplash(id),
+          alt: `${p.title} in ${color.name}${i ? `, photo ${i + 1}` : ""}`,
           color: color.name,
-          position: ci * 2 + vi,
         })),
       ),
+      ...(p.extraPhotos ?? []).map((x) => ({ url: unsplash(x.id), alt: x.alt, color: null })),
+    ];
+    await prisma.productImage.deleteMany({ where: { productId: product.id } });
+    await prisma.productImage.createMany({
+      data: images.map((img, position) => ({ ...img, productId: product.id, position })),
     });
 
     for (const [ci, color] of p.colors.entries()) {
@@ -206,7 +211,9 @@ async function seedCatalog() {
             size,
             color: color.name,
             colorHex: color.hex,
-            stock: stockFor(pi, ci, si),
+            // Development gets sold-out and low-stock cases; production starts at 20
+            // of each (set real stock in Admin → Inventory).
+            stock: isProd ? 20 : stockFor(pi, ci, si),
             weightGrams: p.fit === "SLIM" ? 450 : 650,
           },
         });
@@ -214,20 +221,34 @@ async function seedCatalog() {
       }
     }
   }
+  // Earlier demo products: archive them (orders keep their history).
+  const retired = await prisma.product.updateMany({
+    where: { slug: { in: retiredProductSlugs }, status: { not: "ARCHIVED" } },
+    data: { status: "ARCHIVED", isFeatured: false },
+  });
+  await prisma.category.deleteMany({
+    where: { slug: { in: retiredCategorySlugs }, products: { none: { status: "ACTIVE" } } },
+  });
+  if (retired.count) console.log(`  ✔ archived ${retired.count} old demo products`);
+
   console.log(
     `  ✔ ${categories.length} categories, ${collections.length} collections, ${products.length} products, ${variantCount} variants`,
   );
 }
 
-async function seedPromotions() {
-  for (const coupon of coupons) {
-    await prisma.coupon.upsert({ where: { code: coupon.code }, update: {}, create: coupon });
-  }
+async function seedBanners() {
   for (const banner of banners) {
     const { id, ...data } = banner;
     await prisma.banner.upsert({ where: { id }, update: data, create: banner });
   }
-  console.log(`  ✔ ${coupons.length} coupons, ${banners.length} banners`);
+  console.log(`  ✔ ${banners.length} banners`);
+}
+
+async function seedCoupons() {
+  for (const coupon of coupons) {
+    await prisma.coupon.upsert({ where: { code: coupon.code }, update: {}, create: coupon });
+  }
+  console.log(`  ✔ ${coupons.length} coupons`);
 }
 
 /** A few approved reviews from demo shoppers, so ratings show up in development. */
@@ -288,8 +309,15 @@ async function main() {
   if (!isProd) {
     await seedDemoCustomer();
     await seedCatalog();
-    await seedPromotions();
+    await seedBanners();
+    await seedCoupons();
     await seedReviews();
+  } else if ((await prisma.product.count()) === 0 || process.env.SEED_CATALOG === "true") {
+    // First deploy: start with the Urban Store catalogue. Later runs leave it alone.
+    await seedCatalog();
+    await seedBanners();
+  } else {
+    console.log("  • catalogue already exists: left as it is (SEED_CATALOG=true to reseed)");
   }
   console.log("✅ Seed complete");
 }

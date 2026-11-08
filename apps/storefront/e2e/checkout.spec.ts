@@ -32,10 +32,11 @@ test("guest Cash on Delivery checkout, then track and cancel the order", async (
   await expect(page.getByText("Cash on Delivery fee")).toBeVisible();
   await page.getByRole("button", { name: "Place order" }).click();
 
-  await expect(page).toHaveURL(/\/orders\/HD-\d+\?token=.+&placed=1/);
+  await expect(page).toHaveURL(/\/orders\/US-\d+\?token=.+&placed=1/);
   await expect(page.getByRole("heading", { name: "Your order is confirmed" })).toBeVisible();
-  await expect(page.getByText(email)).toBeVisible();
-  const number = (await page.getByRole("heading", { name: /^Order HD-/ }).textContent())!.replace(
+  // Email isn't set up in the e2e store, so the page says to bookmark it instead.
+  await expect(page.getByText(/Bookmark this page to follow your order/)).toBeVisible();
+  const number = (await page.getByRole("heading", { name: /^Order US-/ }).textContent())!.replace(
     "Order ",
     "",
   );
@@ -66,7 +67,7 @@ test("card payment in demo mode: a declined card, then a successful one", async 
   await page.getByLabel(/Credit or debit card/).check();
   await page.getByRole("button", { name: "Continue to payment" }).click();
 
-  await expect(page).toHaveURL(/\/checkout\/pay\?order=HD-\d+/);
+  await expect(page).toHaveURL(/\/checkout\/pay\?order=US-\d+/);
   await expect(page.getByText("Demo payment mode: no real money is taken.")).toBeVisible();
   await expect(page.getByText(/Your items are reserved for \d+:\d{2}/)).toBeVisible();
 
@@ -113,7 +114,7 @@ test("signed-in checkout with a coupon saves the address and lists the order", a
   await page.getByRole("button", { name: "Place order" }).click();
   await expect(page.getByRole("heading", { name: "Your order is confirmed" })).toBeVisible();
   await expect(page.getByText(/Discount \(WELCOME10\)/)).toBeVisible();
-  const number = (await page.getByRole("heading", { name: /^Order HD-/ }).textContent())!.replace(
+  const number = (await page.getByRole("heading", { name: /^Order US-/ }).textContent())!.replace(
     "Order ",
     "",
   );

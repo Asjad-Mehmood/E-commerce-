@@ -1,3 +1,4 @@
+export { Logo, LogoMark } from "./components/logo";
 export { Badge, type BadgeProps } from "./components/badge";
 export { Button, type ButtonProps } from "./components/button";
 export { Card, Container } from "./components/card";

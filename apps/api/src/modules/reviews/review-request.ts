@@ -1,7 +1,52 @@
-import { env } from "../../config/env";
+import { env, isTest } from "../../config/env";
+import { emailEnabled } from "../../lib/email-config";
 import { emailLayout, esc } from "../../lib/email-layout";
+import { logger } from "../../lib/logger";
 import { sendMail } from "../../lib/mailer";
 import { prisma } from "../../lib/prisma";
+
+const DAY = 24 * 60 * 60 * 1000;
+/** Ask for a review this long after delivery… */
+export const REVIEW_REQUEST_AFTER_MS = 7 * DAY;
+/** …but not for orders delivered longer ago than this (e.g. when email is set up later). */
+const REVIEW_REQUEST_WINDOW_MS = 30 * DAY;
+
+/**
+ * Sends the review request for every order delivered at least a week ago
+ * that hasn't had one yet. Runs on a schedule; each order is claimed first
+ * (reviewRequestedAt) so it is asked once even with several workers. Does
+ * nothing while email isn't set up, so those orders are asked once it is.
+ */
+export async function sendDueReviewRequests(now = new Date()): Promise<number> {
+  if (!isTest && !(await emailEnabled())) return 0;
+  const due = await prisma.order.findMany({
+    where: {
+      status: "DELIVERED",
+      reviewRequestedAt: null,
+      deliveredAt: {
+        lte: new Date(now.getTime() - REVIEW_REQUEST_AFTER_MS),
+        gte: new Date(now.getTime() - REVIEW_REQUEST_WINDOW_MS),
+      },
+    },
+    select: { id: true },
+    orderBy: { deliveredAt: "asc" },
+    take: 200,
+  });
+  let sent = 0;
+  for (const { id } of due) {
+    const claimed = await prisma.order.updateMany({
+      where: { id, reviewRequestedAt: null },
+      data: { reviewRequestedAt: now },
+    });
+    if (!claimed.count) continue;
+    try {
+      sent += await sendReviewRequest(id);
+    } catch (err) {
+      logger.error({ err, orderId: id }, "Review request failed");
+    }
+  }
+  return sent;
+}
 
 /**
  * "How's your hoodie?" email, a week after delivery. Only for orders that are

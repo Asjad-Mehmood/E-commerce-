@@ -10,6 +10,7 @@ const MINUTE = 60_000;
 const SCHEDULES = (timeZone: string) => [
   { name: "expire-orders" as const, repeat: { every: MINUTE } },
   { name: "abandoned-carts" as const, repeat: { every: 15 * MINUTE } },
+  { name: "review-requests" as const, repeat: { every: 60 * MINUTE } },
   // 08:00 in the store's time zone.
   { name: "daily-digest" as const, repeat: { pattern: "0 8 * * *", tz: timeZone } },
 ];
@@ -63,7 +64,11 @@ export async function startJobs(): Promise<() => Promise<void>> {
     timer.unref();
     return timer;
   };
-  const timers = [every("expire-orders", MINUTE), every("abandoned-carts", 15 * MINUTE)];
+  const timers = [
+    every("expire-orders", MINUTE),
+    every("abandoned-carts", 15 * MINUTE),
+    every("review-requests", 60 * MINUTE),
+  ];
   logger.info("Background jobs running in-process (no REDIS_URL)");
   return async () => timers.forEach(clearInterval);
 }

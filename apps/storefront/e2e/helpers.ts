@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
-export const API = process.env.E2E_API_URL ?? "http://localhost:4000/api/v1";
+export const API = process.env.E2E_API_URL ?? "http://localhost:3000/api/v1";
 
 export const uniqueEmail = () =>
   `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.local`;

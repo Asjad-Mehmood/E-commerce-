@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useAuthProviders } from "@/hooks/use-auth";
 import { api } from "@/lib/api";
 import { applyApiError } from "@/lib/forms";
 import { FormMessage } from "./auth-card";
@@ -20,6 +21,19 @@ export function ForgotPasswordForm() {
     setError,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(forgotPasswordSchema) });
+  const providers = useAuthProviders();
+
+  if (providers.data && !providers.data.email) {
+    return (
+      <FormMessage tone="info">
+        We can&apos;t email reset links at the moment.{" "}
+        <Link href="/contact" className="underline">
+          Contact us
+        </Link>{" "}
+        with the email address on your account and we&apos;ll help you sign in.
+      </FormMessage>
+    );
+  }
 
   if (sentTo) {
     return (

@@ -1,4 +1,4 @@
-const STORE = "Hoodie Store";
+const STORE = "Urban Store";
 
 const esc = (s: string) =>
   s.replace(

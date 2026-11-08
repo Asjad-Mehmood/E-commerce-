@@ -5,7 +5,6 @@ import { logger } from "../../lib/logger";
 import { sendMail } from "../../lib/mailer";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
-import { enqueue } from "../../jobs/queue";
 import { afterStockIncrease } from "../engagement/stock-alerts";
 import { getPaymentProvider, type PaymentEvent } from "../payments";
 import { cancelledEmail, confirmationEmail, deliveredEmail, shippedEmail } from "./order.emails";
@@ -13,8 +12,6 @@ import { orderInclude, type FullOrder } from "./order.mapper";
 import * as stock from "./stock";
 
 type Tx = Prisma.TransactionClient;
-
-export const REVIEW_REQUEST_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
 
 const loadOrder = (id: string) =>
   prisma.order.findUniqueOrThrow({ where: { id }, include: orderInclude });
@@ -331,13 +328,8 @@ export async function updateOrderStatus(
   const updated = await loadOrder(orderId);
   if (input.status === "SHIPPED") void sendMail(shippedEmail(updated));
   if (input.status === "DELIVERED") {
+    // The review request follows a week later (scheduled "review-requests" job).
     void sendMail(deliveredEmail(updated));
-    // A week later, ask for a review (needs the Redis job queue for the delay).
-    void enqueue(
-      "review-request",
-      { orderId },
-      { delay: REVIEW_REQUEST_DELAY_MS, jobId: `review-request-${orderId}` },
-    ).catch((err) => logger.error({ err, orderId }, "Could not schedule the review request"));
   }
   return updated;
 }

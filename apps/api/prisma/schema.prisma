@@ -6,7 +6,9 @@
 // - Enums here must match packages/types/src/enums.ts (enforced by a test).
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  /// "rhel-openssl-3.0.x" is the Vercel (AWS Lambda, Node 20+) runtime.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -373,42 +375,44 @@ model Coupon {
 // ───────────────────────────── Orders & payments ─────────────────────────────
 
 model Order {
-  id              String        @id @default(cuid())
-  /// Human-friendly number shown to customers, e.g. HD-10025.
-  orderNumber     String        @unique
-  userId          String?
-  email           String
-  phone           String
+  id                String        @id @default(cuid())
+  /// Human-friendly number shown to customers, e.g. US-10025.
+  orderNumber       String        @unique
+  userId            String?
+  email             String
+  phone             String
   /// Address snapshot at order time.
-  shippingAddress Json
-  billingAddress  Json?
-  status          OrderStatus   @default(PENDING_PAYMENT)
-  paymentMethod   PaymentMethod
-  currency        String        @default("PKR")
-  subtotal        Int
-  discountTotal   Int           @default(0)
-  shippingTotal   Int           @default(0)
-  codFee          Int           @default(0)
-  taxTotal        Int           @default(0)
-  grandTotal      Int
-  couponId        String?
-  couponCode      String?
-  shippingMethod  String
-  trackingNumber  String?
-  courier         String?
-  customerNote    String?
-  adminNotes      String?
+  shippingAddress   Json
+  billingAddress    Json?
+  status            OrderStatus   @default(PENDING_PAYMENT)
+  paymentMethod     PaymentMethod
+  currency          String        @default("PKR")
+  subtotal          Int
+  discountTotal     Int           @default(0)
+  shippingTotal     Int           @default(0)
+  codFee            Int           @default(0)
+  taxTotal          Int           @default(0)
+  grandTotal        Int
+  couponId          String?
+  couponCode        String?
+  shippingMethod    String
+  trackingNumber    String?
+  courier           String?
+  customerNote      String?
+  adminNotes        String?
   /// Stock reservation deadline for unpaid online orders.
-  reservedUntil   DateTime?
+  reservedUntil     DateTime?
   /// Client-supplied key so a double-submitted checkout creates one order.
-  idempotencyKey  String?       @unique
+  idempotencyKey    String?       @unique
   /// Cart the order was placed from (cleared once paid).
-  cartId          String?
-  paidAt          DateTime?
-  deliveredAt     DateTime?
-  cancelledAt     DateTime?
-  placedAt        DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  cartId            String?
+  paidAt            DateTime?
+  deliveredAt       DateTime?
+  /// When the "how's your hoodie?" review email went out (sent once, ~7 days after delivery).
+  reviewRequestedAt DateTime?
+  cancelledAt       DateTime?
+  placedAt          DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   user     User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
   coupon   Coupon?              @relation(fields: [couponId], references: [id], onDelete: SetNull)
@@ -661,6 +665,19 @@ model AuditLog {
   admin User? @relation(fields: [adminId], references: [id], onDelete: SetNull)
 
   @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+/// Uploaded images (product photos, banners...), stored in the database so the
+/// store needs no image-hosting account. Served by GET /media/:id.
+model Media {
+  id          String   @id @default(cuid())
+  folder      String
+  contentType String
+  bytes       Bytes
+  size        Int
+  createdAt   DateTime @default(now())
+
   @@index([createdAt])
 }
 

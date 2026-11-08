@@ -328,6 +328,8 @@ export interface StaffMemberDTO {
   invitePending: boolean;
   lastLoginAt: string | null;
   createdAt: string;
+  /** Set when email isn't configured: the set-password link to pass on by hand. */
+  inviteLink?: string;
 }
 
 export interface StoreSettingsDTO {
@@ -352,8 +354,9 @@ export interface StoreSettingsResponseDTO {
     timeZone: string;
     /** "stripe" (keys set), "demo" (test cards only) or null (card payments unavailable). */
     paymentProvider: "stripe" | "demo" | null;
-    emailProvider: "resend" | "log";
-    uploads: "cloudinary" | "local" | null;
+    /** How email is sent, or null while it isn't set up (nothing is sent). */
+    emailProvider: "smtp" | "resend" | null;
+    uploads: "cloudinary" | "database";
   };
 }
 
@@ -369,7 +372,19 @@ export interface AuditLogEntryDTO {
 }
 
 export interface UploadConfigDTO {
-  provider: "cloudinary" | "local" | null;
+  /** Cloudinary when its keys are set; otherwise images are stored in the database. */
+  provider: "cloudinary" | "database";
   /** Largest accepted file, in bytes. */
   maxBytes: number;
+}
+
+export interface EmailSettingsDTO {
+  provider: "none" | "smtp" | "resend";
+  from: string;
+  smtp: { host: string; port: number; secure: boolean; user: string; hasPassword: boolean };
+  hasResendKey: boolean;
+  /** True when emails are actually being sent. */
+  configured: boolean;
+  /** "environment" when only RESEND_API_KEY on the server is configuring email. */
+  source: "settings" | "environment" | null;
 }

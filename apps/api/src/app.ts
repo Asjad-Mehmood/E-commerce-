@@ -10,8 +10,9 @@ import { docsRouter } from "./docs/docs.routes";
 import { logger } from "./lib/logger";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { originCheck } from "./middleware/origin-check";
+import { internalRequest } from "./middleware/internal-request";
 import { createRateLimiters, type RateLimitOptions } from "./middleware/rate-limit";
-import { MAX_UPLOAD_BYTES, uploadsDir } from "./modules/admin/uploads.routes";
+import { MAX_UPLOAD_BYTES } from "./modules/admin/uploads.routes";
 import { apiRouter } from "./routes";
 
 export interface CreateAppOptions {
@@ -27,6 +28,7 @@ export function createApp({ extend, rateLimit }: CreateAppOptions = {}): Express
 
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
+  app.use(internalRequest);
 
   app.use(
     pinoHttp({
@@ -53,29 +55,11 @@ export function createApp({ extend, rateLimit }: CreateAppOptions = {}): Express
     }),
   );
   app.use(express.urlencoded({ extended: true }));
-  // Admin image uploads (POST /admin/uploads/local) send raw image bytes.
+  // Admin image uploads (POST /admin/uploads/media) send raw image bytes.
   app.use(express.raw({ type: "image/*", limit: MAX_UPLOAD_BYTES }));
   app.use(cookieParser());
 
   if (env.API_DOCS_ENABLED) app.use("/api/docs", docsRouter());
-
-  // Locally stored uploads (development without Cloudinary). Images are loaded by
-  // the storefront and admin from other origins, hence the cross-origin policy.
-  if (env.LOCAL_UPLOADS) {
-    app.use(
-      "/uploads",
-      express.static(uploadsDir(), {
-        immutable: true,
-        maxAge: "365d",
-        index: false,
-        dotfiles: "deny",
-        setHeaders: (res) => {
-          res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-          res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
-        },
-      }),
-    );
-  }
 
   const v1 = express.Router();
   v1.use(limiters.global);

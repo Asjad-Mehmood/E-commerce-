@@ -29,7 +29,7 @@ export function RegisterForm() {
       { ...values, phone: values.phone || undefined },
       {
         onSuccess: () => {
-          toast.success("Welcome! Check your inbox to verify your email.");
+          toast.success("Welcome to Urban Store!");
           router.push(next);
         },
         onError: (err) => setFormError(applyApiError(err, setError)),

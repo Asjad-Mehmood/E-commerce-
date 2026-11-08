@@ -97,7 +97,7 @@ export function CheckoutForm() {
         country: "PK",
       },
       shippingMethod: "standard",
-      paymentMethod: "STRIPE",
+      paymentMethod: "COD",
       saveAddress: false,
     },
   });

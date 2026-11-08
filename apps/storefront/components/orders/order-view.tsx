@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useEmailEnabled } from "@/hooks/use-auth";
 import { api, ApiError } from "@/lib/api";
 import { siteConfig } from "@/lib/config";
 import { OrderProgress, OrderTimeline, StatusBadge } from "./order-progress";
@@ -32,6 +33,7 @@ export function OrderView({ number }: { number: string }) {
   const params = useSearchParams();
   const token = params.get("token");
   const justPlaced = params.get("placed") === "1";
+  const emailEnabled = useEmailEnabled();
   const qs = token ? `?token=${encodeURIComponent(token)}` : "";
   const qc = useQueryClient();
 
@@ -91,7 +93,16 @@ export function OrderView({ number }: { number: string }) {
           <p className="text-success text-sm font-semibold">Thank you!</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight">Your order is confirmed</h1>
           <p className="text-muted mt-2 text-sm">
-            We’ve emailed a confirmation to <strong className="text-ink">{o.email}</strong>.
+            {emailEnabled ? (
+              <>
+                We’ve emailed a confirmation to <strong className="text-ink">{o.email}</strong>.
+              </>
+            ) : (
+              <>
+                Bookmark this page to follow your order, or track it any time with order number{" "}
+                <strong className="text-ink">{o.number}</strong>.
+              </>
+            )}
             {o.paymentMethod === "COD" && (
               <>
                 {" "}

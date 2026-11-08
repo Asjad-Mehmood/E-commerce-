@@ -18,6 +18,8 @@ export default function robots(): MetadataRoute.Robots {
         "/orders",
         "/track-order",
         "/unsubscribe",
+        "/admin",
+        "/api",
       ],
     },
     sitemap: `${siteConfig.url}/sitemap.xml`,

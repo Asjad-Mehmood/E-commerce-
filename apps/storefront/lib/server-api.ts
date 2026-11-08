@@ -1,32 +1,32 @@
 import type { ApiResponse, PaginatedResponse } from "@hoodie/types";
+import { unstable_cache } from "next/cache";
 import { connection } from "next/server";
-import { serverApiUrl } from "./config";
 
 interface FetchOptions {
-  /** Seconds to cache the API response in Next's data cache. */
+  /** Seconds to cache the API response. */
   revalidate?: number;
-  tags?: string[];
+}
+
+/** Reads from the API in this process (no HTTP round trip). 404 → null. */
+async function load(path: string): Promise<string | null> {
+  const { request } = await import("@hoodie/api/embedded");
+  const res = await request(path);
+  if (res.status === 404) return null;
+  if (res.status >= 400) throw new Error(`API ${res.status} for GET ${path}`);
+  return res.body;
 }
 
 /**
  * Server-side GET to the public API.
  *
  * `connection()` makes the calling page render at request time (so the build
- * never needs a running API), while `revalidate` still caches API responses
- * for a short time so pages stay fast.
+ * never needs the database), while responses are cached for `revalidate`
+ * seconds so pages stay fast. Errors are never cached.
  */
-async function get<T>(
-  path: string,
-  { revalidate = 60, tags }: FetchOptions = {},
-): Promise<T | null> {
+async function get<T>(path: string, { revalidate = 60 }: FetchOptions = {}): Promise<T | null> {
   await connection();
-  const res = await fetch(`${serverApiUrl}${path}`, {
-    headers: { Accept: "application/json" },
-    next: { revalidate, tags },
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`API ${res.status} for GET ${path}`);
-  return (await res.json()) as T;
+  const body = await unstable_cache(load, ["api-get", String(revalidate)], { revalidate })(path);
+  return body === null ? null : (JSON.parse(body) as T);
 }
 
 /** `data` of a single-resource response, or null on 404. */

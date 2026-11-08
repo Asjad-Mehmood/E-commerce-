@@ -35,4 +35,17 @@ export default function setup() {
       );
     }
   }
+
+  // The store ships with card payments switched off (Cash on Delivery only), but
+  // the card code paths are still tested, so switch them on in the test database.
+  execSync("pnpm exec prisma db execute --stdin --schema prisma/schema.prisma", {
+    stdio: ["pipe", "pipe", "pipe"],
+    env,
+    // Card tests need cards on, and order numbers use the seeded prefix even in
+    // a test database created before the prefix changed.
+    input: `INSERT INTO "Setting" (key, value, "updatedAt") VALUES
+        ('payments.card.enabled', 'true'::jsonb, now()),
+        ('orders.numberPrefix', '"US-"'::jsonb, now())
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, "updatedAt" = now();`,
+  });
 }

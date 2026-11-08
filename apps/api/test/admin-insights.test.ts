@@ -239,7 +239,7 @@ describe("dashboard and notifications", () => {
     });
     expect(res.body.data.latestOrder).not.toBeNull();
     expect(res.body.data.toFulfil).toBeGreaterThanOrEqual(1);
-    expect(card.number).toMatch(/^HD-/);
+    expect(card.number).toMatch(/^US-/);
   });
 });
 

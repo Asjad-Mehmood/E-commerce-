@@ -351,3 +351,37 @@ export const auditLogQuerySchema = paginationSchema
   })
   .refine(rangeRule, rangeError);
 export type AuditLogQuery = z.infer<typeof auditLogQuerySchema>;
+
+// ───────────── Email settings ─────────────
+
+/** "Urban Store <orders@urbanstore.pk>" or just "orders@urbanstore.pk". */
+const emailFromSchema = z
+  .string()
+  .trim()
+  .max(200)
+  .regex(
+    /^(?:[^<>@]+<\s*[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+\s*>|[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+)$/,
+    'Use an address like orders@yourdomain.com or "Urban Store <orders@yourdomain.com>"',
+  );
+
+/** Secrets are optional on update: leave them out to keep the saved value. */
+export const emailSettingsSchema = z.discriminatedUnion("provider", [
+  z.object({ provider: z.literal("none") }),
+  z.object({
+    provider: z.literal("smtp"),
+    from: emailFromSchema,
+    host: z.string().trim().min(3, "Enter the SMTP server, e.g. smtp.gmail.com").max(200),
+    port: z.number().int().min(1).max(65535),
+    secure: z.boolean(),
+    user: z.string().trim().max(200),
+    password: z.string().max(500).optional(),
+  }),
+  z.object({
+    provider: z.literal("resend"),
+    from: emailFromSchema,
+    apiKey: z.string().trim().max(500).optional(),
+  }),
+]);
+export type EmailSettingsInput = z.infer<typeof emailSettingsSchema>;
+
+export const testEmailSchema = z.object({ to: emailSchema });

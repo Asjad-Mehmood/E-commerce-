@@ -1024,7 +1024,7 @@ Estimated for 1–2 developers. Adjust to your team size.
 > - Returns are refunds only; exchanges are handled by the customer noting the size they want and staff placing a new order.
 > - Cart reminders go to signed-in customers only, because guest carts have no email address until checkout.
 > - Newsletter campaigns are sent from an external email tool using the CSV export; the store only collects subscribers.
-> - Without Redis, the daily summary and review-request emails are skipped; everything else falls back to in-process timers.
+> - Without Redis, the daily summary email is skipped; everything else falls back to in-process timers.
 > - Custom hoodie designer (optional) is not built; it stays in Future Enhancements.
 
 - Reviews and ratings (verified purchases), wishlist.
@@ -1032,7 +1032,31 @@ Estimated for 1–2 developers. Adjust to your team size.
 - Search improvements, related products, "recently viewed".
 - Returns and refunds flow.
 
-### Phase 6: Polish, QA & Launch (Weeks 10–12)
+### Phase 6: Polish, QA & Launch (Weeks 10–12) ✅ complete
+
+> Done:
+>
+> - **Brand:** the store is **Urban Store**, with its own logo, favicon and share image.
+> - **Catalogue:** real products with Pakistani pricing (Rs 2,699–5,499), real photos per colour and category images.
+> - **Payments:** Cash on Delivery only; cards switch on only once Stripe keys exist.
+> - **Email:** set up in the admin (SMTP or Resend, secrets encrypted, test button). Nothing is sent until it is.
+> - **Images:** uploads are stored in Postgres, so no Cloudinary account is needed.
+> - **Deployment:** Vercel with Neon Postgres (DEPLOYMENT.md).
+>   - The API is one serverless function; migrations and the seed run in its build, and a daily cron runs the scheduled jobs.
+>   - The storefront and admin proxy `/api/v1`, so cookies stay first-party.
+> - **SEO:** Organization/WebSite structured data, a generated Open Graph image, sitemap, product and FAQ structured data.
+> - **Accessibility:** axe checks (WCAG 2.1 AA) on 14 storefront and 10 admin pages in the e2e suite, with the issues they found fixed (status colour contrast, label/name mismatches, heading order).
+> - **Performance:** Lighthouse (mobile) scores 92–93 for performance, 98–100 for accessibility and best practices, and 92–100 for SEO. Images are resized by their CDN (no image-optimisation quota), and the first images load eagerly.
+> - **Load test:** autocannon with 50 connections against one local API process. Product list about 495 req/s (p99 143 ms), product page about 840 req/s (p99 86 ms), search suggestions about 770 req/s (p99 92 ms).
+> - **Security review:**
+>   - `pnpm audit` is clean for shipped code: nodemailer upgraded to 10.3, PostCSS overridden to 8.5.32. Two findings remain, both in build-time tooling (Prisma CLI config loader, ESLint).
+>   - Already in place: OWASP basics such as parameterised queries, argon2id, httpOnly SameSite cookies, Origin-checked writes, rate limits, Zod validation everywhere, secure headers, and an audit log.
+>   - New: proxy-forwarded IPs are trusted only with a shared secret, and the cron endpoint needs `CRON_SECRET`.
+> - **Analytics:** Vercel Web Analytics and Speed Insights. They use no cookies, so no consent banner is needed; the privacy policy says only essential cookies are used.
+>
+> The shop, the admin panel (`/admin`) and the API (`/api/v1`) were then merged into one Next.js app, so the store is a single Vercel project.
+>
+> Left for the store owner (see DEPLOYMENT.md): set up the Vercel project and the Neon database, set the environment variables, add a custom domain, set real stock levels, and set up email in the admin. Neon keeps point-in-time restore for backups; Vercel provides logs and HTTPS.
 
 - SEO (meta, JSON-LD, sitemap), performance tuning, accessibility audit.
 - Full E2E test suite, load testing, security review (OWASP checklist).

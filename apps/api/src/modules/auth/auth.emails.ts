@@ -2,7 +2,7 @@ import { env } from "../../config/env";
 import { emailLayout, esc } from "../../lib/email-layout";
 import type { Mail } from "../../lib/mailer";
 
-const STORE = "Hoodie Store";
+const STORE = "Urban Store";
 const layout = (title: string, body: string, cta: { label: string; url: string }) =>
   emailLayout(title, `<p style="color:#444;line-height:1.5">${body}</p>`, cta);
 

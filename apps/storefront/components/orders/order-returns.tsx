@@ -87,7 +87,7 @@ function ReturnForm({
     mutationFn: (body: Record<string, unknown>) =>
       api<ApiResponse<OrderDTO>>(`/orders/${order.number}/returns${qs}`, { method: "POST", body }),
     onSuccess: ({ data }) => {
-      toast.success("Return requested. We've emailed you the next steps.");
+      toast.success("Return requested. We'll be in touch about the next steps.");
       onDone(data);
     },
     onError: (e) =>

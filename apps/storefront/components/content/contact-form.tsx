@@ -66,7 +66,7 @@ export function ContactForm() {
         </Field>
       </div>
       <Field label="Subject (optional)" htmlFor="contact-subject" error={errors.subject?.message}>
-        <Input id="contact-subject" placeholder="e.g. Order HD-10025" {...register("subject")} />
+        <Input id="contact-subject" placeholder="e.g. Order US-10025" {...register("subject")} />
       </Field>
       <Field label="Message" htmlFor="contact-message" error={errors.message?.message}>
         <textarea
