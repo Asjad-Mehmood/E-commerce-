@@ -25,6 +25,11 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     datasourceUrl: databaseUrl(env.DATABASE_URL),
+    // Prisma's defaults (2 s to start a transaction, 5 s to finish it) are too
+    // short for a hosted database that is far away or waking up from sleep:
+    // placing an order is one transaction of 10-15 queries, so it would fail
+    // with "Transaction not found". Allow up to 30 s.
+    transactionOptions: { maxWait: 10_000, timeout: 30_000 },
     // Query errors are reported by the error handler; logging them here too would duplicate them.
     log: ["warn"],
   });
